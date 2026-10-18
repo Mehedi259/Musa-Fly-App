@@ -42,7 +42,8 @@ class UmrahCard extends StatelessWidget {
             Stack(
               children: [
                 AppNetworkImage(
-                  imageUrl: package.image ?? AppAssets.fallbackKaaba,
+                  imageUrl: package.displayImage,
+                  fallbackUrl: AppAssets.fallbackKaaba,
                   width: double.infinity,
                   height: 180,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),

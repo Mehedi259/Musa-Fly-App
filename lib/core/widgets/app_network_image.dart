@@ -6,32 +6,36 @@ import 'shimmer_loader.dart';
 
 class AppNetworkImage extends StatelessWidget {
   final String? imageUrl;
+  final String? fallbackUrl;
   final double? width;
   final double? height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
-  final String? fallbackAsset;
 
   const AppNetworkImage({
     super.key,
     required this.imageUrl,
+    this.fallbackUrl,
     this.width,
     this.height,
     this.fit = BoxFit.cover,
     this.borderRadius,
-    this.fallbackAsset,
   });
 
   @override
   Widget build(BuildContext context) {
-    final validUrl = ApiConstants.formatImageUrl(imageUrl);
+    String primaryUrl = ApiConstants.formatImageUrl(imageUrl);
+    String backupUrl = ApiConstants.formatImageUrl(fallbackUrl);
+
+    // If primary is empty, try backup
+    final effectiveUrl = primaryUrl.isNotEmpty ? primaryUrl : backupUrl;
 
     Widget imageWidget;
-    if (validUrl.isEmpty) {
-      imageWidget = _buildFallback();
+    if (effectiveUrl.isEmpty) {
+      imageWidget = _buildPlaceholder();
     } else {
       imageWidget = CachedNetworkImage(
-        imageUrl: validUrl,
+        imageUrl: effectiveUrl,
         width: width,
         height: height,
         fit: fit,
@@ -40,7 +44,19 @@ class AppNetworkImage extends StatelessWidget {
           height: height ?? double.infinity,
           borderRadius: borderRadius,
         ),
-        errorWidget: (context, url, error) => _buildFallback(),
+        errorWidget: (context, url, error) {
+          // If primary failed and we have a secondary backup URL, try it
+          if (backupUrl.isNotEmpty && url != backupUrl) {
+            return CachedNetworkImage(
+              imageUrl: backupUrl,
+              width: width,
+              height: height,
+              fit: fit,
+              errorWidget: (context, url, error) => _buildPlaceholder(),
+            );
+          }
+          return _buildPlaceholder();
+        },
       );
     }
 
@@ -54,16 +70,25 @@ class AppNetworkImage extends StatelessWidget {
     return imageWidget;
   }
 
-  Widget _buildFallback() {
+  Widget _buildPlaceholder() {
     return Container(
       width: width,
       height: height,
-      color: AppColors.primarySubtle,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withAlpha(40),
+            AppColors.primary.withAlpha(70),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Center(
         child: Icon(
-          Icons.image_outlined,
-          color: AppColors.primary.withAlpha(128),
-          size: 28,
+          Icons.photo_size_select_actual_outlined,
+          color: AppColors.primary.withAlpha(120),
+          size: 32,
         ),
       ),
     );

@@ -46,7 +46,7 @@ class TourCard extends StatelessWidget {
               Stack(
                 children: [
                   AppNetworkImage(
-                    imageUrl: tour.image,
+                    imageUrl: tour.displayImage,
                     width: 260,
                     height: 140,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
@@ -168,7 +168,7 @@ class TourCard extends StatelessWidget {
             Stack(
               children: [
                 AppNetworkImage(
-                  imageUrl: tour.image,
+                  imageUrl: tour.displayImage,
                   width: double.infinity,
                   height: 180,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),

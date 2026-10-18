@@ -45,4 +45,15 @@ class UmrahModel {
   String get cleanTitle {
     return packageName.split('(').first.trim();
   }
+
+  String get displayImage {
+    if (image != null && image!.isNotEmpty) return image!;
+    final lower = packageName.toLowerCase();
+    if (lower.contains('vip')) {
+      return 'https://images.unsplash.com/photo-1580418827493-f2b22c0a76cb?q=80&w=800';
+    } else if (lower.contains('premium')) {
+      return 'https://images.unsplash.com/photo-1591143223000-e14529f52f36?q=80&w=800';
+    }
+    return 'https://images.unsplash.com/photo-1565552643952-255964893798?q=80&w=800';
+  }
 }

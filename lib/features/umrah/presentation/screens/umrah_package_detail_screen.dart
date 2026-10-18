@@ -53,7 +53,8 @@ class _UmrahPackageDetailScreenState extends State<UmrahPackageDetailScreen> {
                 fit: StackFit.expand,
                 children: [
                   AppNetworkImage(
-                    imageUrl: widget.package.image ?? AppAssets.fallbackKaaba,
+                    imageUrl: widget.package.displayImage,
+                    fallbackUrl: AppAssets.fallbackKaaba,
                     width: double.infinity,
                     height: double.infinity,
                   ),

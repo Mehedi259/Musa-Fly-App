@@ -62,4 +62,19 @@ class VisaModel {
     }
     return '$processingTime Working Days';
   }
+
+  String get displayImage {
+    if (image != null && image!.isNotEmpty) return image!;
+    final lower = country.toLowerCase();
+    if (lower.contains('malaysia')) {
+      return 'https://images.unsplash.com/photo-1596422846543-75c6fc197f07?q=80&w=800';
+    } else if (lower.contains('singapore')) {
+      return 'https://images.unsplash.com/photo-1525625293386-3f8f99389edd?q=80&w=800';
+    } else if (lower.contains('uae') || lower.contains('dubai')) {
+      return 'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=800';
+    } else if (lower.contains('oman')) {
+      return 'https://images.unsplash.com/photo-1547304638-aa0a7b5aae3d?q=80&w=800';
+    }
+    return 'https://images.unsplash.com/photo-1566552881560-0be862a7c445?q=80&w=800';
+  }
 }

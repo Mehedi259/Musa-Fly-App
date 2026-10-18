@@ -70,7 +70,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                 fit: StackFit.expand,
                 children: [
                   AppNetworkImage(
-                    imageUrl: widget.tour.image,
+                    imageUrl: widget.tour.displayImage,
                     width: double.infinity,
                     height: double.infinity,
                   ),

@@ -50,19 +50,11 @@ class VisaCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: visa.image != null
-                        ? AppNetworkImage(
-                            imageUrl: visa.image,
-                            width: 52,
-                            height: 52,
-                          )
-                        : const Center(
-                            child: Icon(
-                              Icons.public_rounded,
-                              color: AppColors.primary,
-                              size: 28,
-                            ),
-                          ),
+                    child: AppNetworkImage(
+                      imageUrl: visa.displayImage,
+                      width: 52,
+                      height: 52,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
