@@ -1,4 +1,4 @@
-package com.musafly.musa_fly_app
+package com.musafly.app
 
 import io.flutter.embedding.android.FlutterActivity
 
