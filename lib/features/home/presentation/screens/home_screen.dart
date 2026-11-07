@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/utils/url_helper.dart';
 import '../../../../core/widgets/section_title.dart';
+import '../../../../core/widgets/app_network_image.dart';
 import '../../../flights/presentation/providers/flight_provider.dart';
 import '../../../flights/presentation/screens/flight_booking_dialog.dart';
 import '../../../flights/presentation/widgets/flight_card.dart';
@@ -17,6 +18,10 @@ import '../../../umrah/presentation/providers/umrah_provider.dart';
 import '../../../umrah/presentation/widgets/umrah_card.dart';
 import '../../../visas/presentation/providers/visa_provider.dart';
 import '../../../visas/presentation/widgets/visa_card.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/screens/auth_bottom_sheet.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
+import '../../../notifications/presentation/screens/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -42,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Provider.of<UmrahProvider>(context, listen: false).fetchPackages();
     Provider.of<VisaProvider>(context, listen: false).fetchVisas();
     Provider.of<SupportProvider>(context, listen: false).fetchSupportData();
+    Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
   }
 
   @override
@@ -112,18 +118,107 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      // WhatsApp Quick Chat Button
-                      ElevatedButton.icon(
-                        onPressed: () => UrlHelper.launchWhatsApp(),
-                        icon: const Icon(Icons.chat_bubble_rounded, size: 16),
-                        label: const Text('Concierge'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.whatsapp,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
+                      // Header Actions: Notifications (bKash style), Profile & Concierge
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Notification Bell
+                          Consumer<NotificationProvider>(
+                            builder: (context, notifProvider, _) {
+                              final unread = notifProvider.unreadCount;
+                              return Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  IconButton(
+                                    constraints: const BoxConstraints(),
+                                    padding: const EdgeInsets.all(6),
+                                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 23),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  if (unread > 0)
+                                    Positioned(
+                                      top: 2,
+                                      right: 2,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(3),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFFEF4444),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                                        child: Center(
+                                          child: Text(
+                                            unread > 9 ? '9+' : '$unread',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 9,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 4),
+
+                          // Google Profile / Sign-in
+                          Consumer<AuthProvider>(
+                            builder: (context, authProvider, _) {
+                              final user = authProvider.currentUser;
+                              return InkWell(
+                                onTap: () => AuthBottomSheet.show(context),
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withAlpha(authProvider.isAuthenticated ? 255 : 40),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white.withAlpha(80), width: 1.5),
+                                  ),
+                                  child: Center(
+                                    child: authProvider.isAuthenticated && user != null
+                                        ? Text(
+                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
+                                            style: const TextStyle(
+                                              color: AppColors.primary,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          )
+                                        : const Icon(Icons.person_outline_rounded, color: Colors.white, size: 18),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 8),
+
+                          // WhatsApp Concierge Button
+                          ElevatedButton.icon(
+                            onPressed: () => UrlHelper.launchWhatsApp(),
+                            icon: const Icon(Icons.chat_bubble_rounded, size: 14),
+                            label: const Text('Concierge'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.whatsapp,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                              minimumSize: const Size(0, 32),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -181,7 +276,129 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+
+                  // Dynamic Campaign & Offers Banner Carousel (bKash style)
+                  Consumer<NotificationProvider>(
+                    builder: (context, notifProvider, _) {
+                      final campaigns = notifProvider.notifications
+                          .where((n) => n.image != null && n.image!.isNotEmpty)
+                          .toList();
+                      if (campaigns.isEmpty) return const SizedBox.shrink();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionTitle(
+                            title: 'স্পেশাল অফার ও ক্যাম্পেইন',
+                            subtitle: 'মুসাফ্লাইয়ের সেরা ডিসকাউন্ট এবং ডিলসমূহ',
+                            actionText: 'সবগুলো দেখুন',
+                            onAction: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 160,
+                            child: ListView.separated(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              scrollDirection: Axis.horizontal,
+                              itemCount: campaigns.length,
+                              separatorBuilder: (context, index) => const SizedBox(width: 12),
+                              itemBuilder: (context, index) {
+                                final campaign = campaigns[index];
+                                return InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
+                                      ),
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Container(
+                                    width: 280,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withAlpha(12),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Stack(
+                                        fit: StackFit.expand,
+                                        children: [
+                                          AppNetworkImage(
+                                            imageUrl: campaign.image!,
+                                            fit: BoxFit.cover,
+                                          ),
+                                          Container(
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [
+                                                  Colors.transparent,
+                                                  Colors.black.withAlpha(180),
+                                                ],
+                                                begin: Alignment.topCenter,
+                                                end: Alignment.bottomCenter,
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 10,
+                                            left: 10,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEF4444),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Text(
+                                                campaign.badgeText,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 10,
+                                            left: 10,
+                                            right: 10,
+                                            child: Text(
+                                              campaign.title,
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12.5,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                      );
+                    },
+                  ),
 
                   // Flight Search Card
                   Padding(

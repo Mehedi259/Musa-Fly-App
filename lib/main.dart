@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_strings.dart';
 import 'core/constants/app_theme.dart';
+import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/deals/presentation/providers/deal_provider.dart';
 import 'features/flights/presentation/providers/flight_provider.dart';
 import 'features/navigation/presentation/main_nav_screen.dart';
+import 'features/notifications/presentation/providers/notification_provider.dart';
 import 'features/support/presentation/providers/support_provider.dart';
 import 'features/tours/presentation/providers/tour_provider.dart';
 import 'features/umrah/presentation/providers/umrah_provider.dart';
@@ -30,6 +32,8 @@ class MusaFlyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()..init()),
         ChangeNotifierProvider(create: (_) => FlightProvider()),
         ChangeNotifierProvider(create: (_) => TourProvider()),
         ChangeNotifierProvider(create: (_) => UmrahProvider()),

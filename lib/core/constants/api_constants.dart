@@ -15,6 +15,9 @@ class ApiConstants {
   static const String inventory = '/inventory/';
   static const String dashboardStats = '/dashboard/stats/';
   static const String campaigns = '/marketing/campaigns/';
+  static const String notifications = '/notifications/';
+  static const String registerDevice = '/devices/register/';
+  static const String googleAuth = '/auth/google/';
 
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 15);
