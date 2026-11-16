@@ -299,8 +299,8 @@ class ProfileScreen extends StatelessWidget {
           Center(
             child: Text(
               context.pick(
-                'MusaFly App v1.0.1+2\nOfficial Airline & Umrah Partner',
-                'মুসাফ্লাই অ্যাপ v1.0.1+2\nঅনুমোদিত এয়ারলাইন ও উমরাহ পার্টনার',
+                'MusaFly App v1.0.2\nOfficial Airline & Umrah Partner',
+                'মুসাফ্লাই অ্যাপ v1.0.2\nঅনুমোদিত এয়ারলাইন ও উমরাহ পার্টনার',
               ),
               textAlign: TextAlign.center,
               style: const TextStyle(
