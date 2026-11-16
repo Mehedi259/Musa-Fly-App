@@ -22,7 +22,7 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.icon,
     this.width,
-    this.height = 50,
+    this.height = 54,
     this.backgroundColor,
     this.textColor,
   });
@@ -82,19 +82,24 @@ class CustomButton extends StatelessWidget {
             ],
           );
 
-    return SizedBox(
+    final glow = (type == ButtonType.primary || type == ButtonType.secondary) && onPressed != null && !isLoading;
+    return Container(
       width: width,
       height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: glow ? [BoxShadow(color: bg.withAlpha(80), blurRadius: 16, offset: const Offset(0, 6))] : null,
+      ),
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          elevation: type == ButtonType.primary ? 2 : 0,
-          shadowColor: bg.withAlpha(100),
+          elevation: 0,
+          shadowColor: Colors.transparent,
           side: border,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 16),
         ),

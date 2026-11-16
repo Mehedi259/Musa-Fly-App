@@ -21,12 +21,17 @@ class FlightModel {
 
   factory FlightModel.fromJson(Map<String, dynamic> json) {
     return FlightModel(
-      id: json['id'] is int ? json['id'] : int.tryParse(json['id'].toString()) ?? 0,
+      id: json['id'] is int
+          ? json['id']
+          : int.tryParse(json['id'].toString()) ?? 0,
       airline: json['airline'] ?? 'Airline',
       origin: json['origin'] ?? 'Origin',
       destination: json['destination'] ?? 'Destination',
-      departureTime: DateTime.tryParse(json['departure_time']?.toString() ?? '') ?? DateTime.now(),
-      arrivalTime: DateTime.tryParse(json['arrival_time']?.toString() ?? '') ??
+      departureTime:
+          DateTime.tryParse(json['departure_time']?.toString() ?? '') ??
+          DateTime.now(),
+      arrivalTime:
+          DateTime.tryParse(json['arrival_time']?.toString() ?? '') ??
           DateTime.now().add(const Duration(hours: 4)),
       price: double.tryParse(json['price']?.toString() ?? '0') ?? 0.0,
       image: json['image'],
@@ -47,13 +52,16 @@ class FlightModel {
   // Extract airport code helper e.g. "Dhaka (DAC)" -> "DAC"
   String get originCode {
     final match = RegExp(r'\((.*?)\)').firstMatch(origin);
-    return match?.group(1) ?? (origin.length >= 3 ? origin.substring(0, 3).toUpperCase() : origin);
+    return match?.group(1) ??
+        (origin.length >= 3 ? origin.substring(0, 3).toUpperCase() : origin);
   }
 
   String get destinationCode {
     final match = RegExp(r'\((.*?)\)').firstMatch(destination);
     return match?.group(1) ??
-        (destination.length >= 3 ? destination.substring(0, 3).toUpperCase() : destination);
+        (destination.length >= 3
+            ? destination.substring(0, 3).toUpperCase()
+            : destination);
   }
 
   String get originCity {

@@ -8,7 +8,7 @@ class FlightProvider extends ChangeNotifier {
   final FlightRepository _repository;
 
   FlightProvider({FlightRepository? repository})
-      : _repository = repository ?? FlightRepository();
+    : _repository = repository ?? FlightRepository();
 
   List<FlightModel> _flights = [];
   List<FlightModel> _searchResults = [];

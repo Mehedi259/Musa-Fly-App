@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:musa_fly_app/core/constants/app_icons.dart';
+
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_design.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/url_helper.dart';
-import '../../../../core/widgets/app_network_image.dart';
-import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/widgets/premium.dart';
 import '../../../deals/data/models/deal_model.dart';
 import '../../../deals/data/repositories/deal_repository.dart';
 import '../../data/models/tour_model.dart';
+import '../widgets/travel_ui.dart';
 
 class TourDetailScreen extends StatefulWidget {
   final TourModel tour;
@@ -30,284 +34,175 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tour = widget.tour;
+    final price = CurrencyFormatter.formatSmart(tour.price);
+    final inclusions = tour.inclusionList;
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
         slivers: [
-          // Collapsible Image App Bar
-          SliverAppBar(
-            expandedHeight: 280,
-            pinned: true,
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(120),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+          PhotoHeroSliver(
+            title: tour.destination,
+            subtitle: 'Holiday package · ${tour.duration}',
+            imageUrl: tour.displayImage,
+            fallbackUrl: AppAssets.fallbackTour,
+            chips: [
+              ToneChip(
+                label: tour.duration,
+                icon: PhosphorIconsFill.clock,
+                tone: ChipTone.onImage,
               ),
-              onPressed: () => Navigator.pop(context),
-            ),
+              const ToneChip(
+                label: '4.8 · 320 reviews',
+                icon: PhosphorIconsFill.star,
+                tone: ChipTone.onImage,
+              ),
+            ],
             actions: [
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withAlpha(120),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.share_rounded, color: Colors.white, size: 20),
-                ),
-                onPressed: () {
-                  final msg =
-                      "Check out this tour package on MusaFly: ${widget.tour.destination} (${widget.tour.duration}) for ${CurrencyFormatter.formatSmart(widget.tour.price)}!";
-                  UrlHelper.launchWhatsApp(customMessage: msg);
+              GlassIconButton(
+                icon: PhosphorIconsBold.shareNetwork,
+                onTap: () {
+                  UrlHelper.launchWhatsApp(
+                    customMessage:
+                        'Check out this tour package on MusaFly: ${tour.destination} (${tour.duration}) for $price!',
+                  );
                 },
               ),
             ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  AppNetworkImage(
-                    imageUrl: widget.tour.displayImage,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.transparent, Color(0xCC0D1F3A)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            widget.tour.duration,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.tour.destination,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
-
-          // Details Body
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Price Banner
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySubtle,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primaryLight.withAlpha(50)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Package Price',
-                              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              CurrencyFormatter.formatSmart(widget.tour.price),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ],
+          DetailSheet(
+            children: [
+              SoftPanel(
+                tint: AppColors.catTour,
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                radius: AppRadius.md,
+                child: Row(
+                  children: [
+                    Icon(PhosphorIconsFill.tag, size: 20, color: AppColors.catTour),
+                    const SizedBox(width: AppSpacing.md),
+                    const Expanded(
+                      child: Text(
+                        'All taxes and service charges are already included in this price.',
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.4,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.success.withAlpha(25),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Text(
-                            'All Taxes Included',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Highlights / Inclusions
-                  const Text(
-                    "What's Included",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...widget.tour.inclusionList.map(
-                    (inc) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.check, size: 12, color: Colors.white),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              inc,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              const SectionHeader(
+                title: 'Trip at a glance',
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
+              ),
+              GlanceStrip(
+                tiles: [
+                  InfoTile(
+                    icon: PhosphorIconsRegular.clock,
+                    label: 'Duration',
+                    value: tour.duration,
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // Key Benefits Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildFeatureRow(Icons.hotel_rounded, 'Premium Accommodations', 'Handpicked 4-star and luxury hotels'),
-                        const Divider(height: 20),
-                        _buildFeatureRow(Icons.directions_bus_rounded, 'Airport & Sightseeing Transfers', 'Private air-conditioned vehicles'),
-                        const Divider(height: 20),
-                        _buildFeatureRow(Icons.support_agent_rounded, '24/7 Dedicated Concierge', 'Local on-ground assistance at destination'),
-                      ],
-                    ),
+                  const InfoTile(
+                    icon: PhosphorIconsRegular.bed,
+                    label: 'Stay',
+                    value: '4★ hotels',
                   ),
-
-                  const SizedBox(height: 32),
+                  const InfoTile(
+                    icon: PhosphorIconsRegular.van,
+                    label: 'Transfers',
+                    value: 'Private',
+                  ),
                 ],
               ),
-            ),
+              if (inclusions.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.xl),
+                const SectionHeader(
+                  title: "What's included",
+                  subtitle: 'Everything covered by the package price',
+                  padding: EdgeInsets.only(bottom: AppSpacing.md),
+                ),
+                PremiumCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.md,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [for (final item in inclusions) CheckLine(text: item)],
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+              const SectionHeader(
+                title: 'Why book with MusaFly',
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
+              ),
+              PremiumCard(
+                child: Column(
+                  children: [
+                    FeatureRow(
+                      icon: PhosphorIconsRegular.buildings,
+                      title: 'Premium accommodation',
+                      subtitle: 'Handpicked 4-star and luxury properties, centrally located.',
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      child: DashedDivider(),
+                    ),
+                    FeatureRow(
+                      icon: PhosphorIconsRegular.mapTrifold,
+                      title: 'Airport & sightseeing transfers',
+                      subtitle: 'Private air-conditioned vehicles with an English-speaking driver.',
+                      color: AppColors.catTour,
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      child: DashedDivider(),
+                    ),
+                    FeatureRow(
+                      icon: PhosphorIconsRegular.headset,
+                      title: '24/7 dedicated concierge',
+                      subtitle: 'On-ground assistance at your destination, any time of day.',
+                      color: AppColors.success,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
+      bottomNavigationBar: StickyActionBar(
+        priceLabel: 'Starting at',
+        priceValue: price,
+        priceNote: 'per person',
+        secondary: SoftIconButton(
+          icon: PhosphorIconsFill.whatsappLogo,
+          color: AppColors.whatsapp,
+          size: 54,
+          tooltip: 'Chat on WhatsApp',
+          onTap: () {
+            UrlHelper.launchWhatsApp(
+              customMessage:
+                  'Hello MusaFly! I am interested in the ${widget.tour.destination} (${widget.tour.duration}) tour package priced at $price. Could you please provide full itinerary details?',
+            );
+          },
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: CustomButton(
-                text: 'WhatsApp Inquiry',
-                icon: Icons.chat_bubble_rounded,
-                backgroundColor: AppColors.whatsapp,
-                onPressed: () {
-                  final msg =
-                      "Hello MusaFly! I am interested in the ${widget.tour.destination} (${widget.tour.duration}) tour package priced at ${CurrencyFormatter.formatSmart(widget.tour.price)}. Could you please provide full itinerary details?";
-                  UrlHelper.launchWhatsApp(customMessage: msg);
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CustomButton(
-                text: 'Book Package',
-                type: ButtonType.primary,
-                onPressed: _openBookingSheet,
-              ),
-            ),
-          ],
+        action: PremiumButton(
+          label: 'Book package',
+          icon: PhosphorIconsBold.arrowRight,
+          trailingIcon: true,
+          onPressed: _openBookingSheet,
         ),
       ),
-    );
-  }
-
-  Widget _buildFeatureRow(IconData icon, String title, String subtitle) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primarySubtle,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -346,7 +241,9 @@ class _TourBookingSheetState extends State<_TourBookingSheet> {
       final deal = DealModel(
         customerName: _nameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
-        address: _notesController.text.trim().isEmpty ? 'Tour Booking Request' : _notesController.text.trim(),
+        address: _notesController.text.trim().isEmpty
+            ? 'Tour Booking Request'
+            : _notesController.text.trim(),
         passportNumber: 'N/A',
         email: _emailController.text.trim(),
         serviceCategory: 'Holiday Tour',
@@ -360,38 +257,18 @@ class _TourBookingSheetState extends State<_TourBookingSheet> {
       await DealRepository().createDeal(deal);
       if (!mounted) return;
       setState(() => _isSubmitting = false);
+      final name = _nameController.text.trim();
       Navigator.pop(context);
 
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 54),
-              const SizedBox(height: 16),
-              const Text('Tour Inquiry Received!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(
-                'Our holiday planner will get in touch with you to customize your ${widget.tour.destination} trip.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 20),
-              CustomButton(
-                text: 'Chat with Agent',
-                backgroundColor: AppColors.whatsapp,
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  UrlHelper.launchWhatsApp(
-                    customMessage:
-                        "Hi MusaFly! I just submitted an inquiry for ${widget.tour.destination}. My name is ${_nameController.text.trim()}.",
-                  );
-                },
-              ),
-            ],
-          ),
+      showSubmissionSuccess(
+        context,
+        title: 'Tour inquiry received',
+        message:
+            'Our holiday planner will get in touch with you to customize your ${widget.tour.destination} trip.',
+        chatLabel: 'Chat with agent',
+        onChat: () => UrlHelper.launchWhatsApp(
+          customMessage:
+              'Hi MusaFly! I just submitted an inquiry for ${widget.tour.destination}. My name is $name.',
         ),
       );
     } catch (e) {
@@ -406,67 +283,83 @@ class _TourBookingSheetState extends State<_TourBookingSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      // Sized to its content, capped so a long form still scrolls. A fixed
+      // height left a slab of empty white under short forms.
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        AppSpacing.md,
+        AppSpacing.page,
+        MediaQuery.viewInsetsOf(context).bottom + AppSpacing.xl,
+      ),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Book ${widget.tour.destination}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
-                ],
+              SheetHeader(
+                title: 'Book ${widget.tour.destination}',
+                subtitle: '${widget.tour.duration} · ${CurrencyFormatter.formatSmart(widget.tour.price)} per person',
               ),
-              const Divider(),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.lg),
               CustomTextField(
                 label: 'Your Name *',
                 controller: _nameController,
                 hint: 'Full Name',
-                prefixIcon: const Icon(Icons.person_outline),
+                prefixIcon: Icon(PhosphorIconsRegular.user),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               CustomTextField(
                 label: 'Phone Number *',
                 controller: _phoneController,
                 hint: 'e.g. +968 95923226',
                 keyboardType: TextInputType.phone,
-                prefixIcon: const Icon(Icons.phone_outlined),
+                prefixIcon: Icon(PhosphorIconsRegular.phone),
                 validator: (val) => val == null || val.trim().isEmpty ? 'Required' : null,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               CustomTextField(
                 label: 'Email',
                 controller: _emailController,
                 hint: 'name@domain.com',
-                prefixIcon: const Icon(Icons.mail_outline),
+                prefixIcon: Icon(PhosphorIconsRegular.envelopeSimple),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               CustomTextField(
                 label: 'Special Requests / Number of Guests',
                 controller: _notesController,
                 hint: 'e.g. 2 Adults, 1 Child',
                 maxLines: 2,
-                prefixIcon: const Icon(Icons.group_outlined),
+                prefixIcon: Icon(PhosphorIconsRegular.usersThree),
               ),
-              const SizedBox(height: 24),
-              CustomButton(
-                text: 'Send Booking Inquiry',
-                isLoading: _isSubmitting,
+              const SizedBox(height: AppSpacing.xxl),
+              PremiumButton(
+                label: 'Send booking inquiry',
+                loading: _isSubmitting,
                 onPressed: _submit,
-                width: double.infinity,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(PhosphorIconsFill.lockSimple, size: 12, color: AppColors.textMuted),
+                  const SizedBox(width: 5),
+                  const Flexible(
+                    child: Text(
+                      'Your details are only used to prepare this quote.',
+                      maxLines: 2,
+                      style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

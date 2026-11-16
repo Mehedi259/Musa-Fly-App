@@ -1,27 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:musa_fly_app/core/constants/app_icons.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/constants/app_assets.dart';
+
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/app_design.dart';
 import '../../../../core/utils/url_helper.dart';
-import '../../../../core/widgets/section_title.dart';
-import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/motion.dart';
+import '../../../../core/widgets/premium.dart';
+import '../../../auth/presentation/screens/auth_bottom_sheet.dart';
 import '../../../flights/presentation/providers/flight_provider.dart';
 import '../../../flights/presentation/screens/flight_booking_dialog.dart';
 import '../../../flights/presentation/widgets/flight_card.dart';
 import '../../../flights/presentation/widgets/flight_search_card.dart';
+import '../../../notifications/presentation/providers/notification_provider.dart';
+import '../../../notifications/presentation/screens/notifications_screen.dart';
 import '../../../support/presentation/providers/support_provider.dart';
 import '../../../tours/presentation/providers/tour_provider.dart';
+import '../../../support/presentation/screens/support_screen.dart';
 import '../../../tours/presentation/screens/tours_screen.dart';
 import '../../../tours/presentation/widgets/tour_card.dart';
 import '../../../umrah/presentation/providers/umrah_provider.dart';
 import '../../../umrah/presentation/widgets/umrah_card.dart';
 import '../../../visas/presentation/providers/visa_provider.dart';
 import '../../../visas/presentation/widgets/visa_card.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../auth/presentation/screens/auth_bottom_sheet.dart';
-import '../../../notifications/presentation/providers/notification_provider.dart';
-import '../../../notifications/presentation/screens/notifications_screen.dart';
+import '../widgets/home_category_row.dart';
+import '../widgets/home_hero.dart';
+import '../widgets/home_offers_carousel.dart';
+import '../widgets/home_section_states.dart';
+import '../widgets/home_trust_block.dart';
+
+/// Tab indexes owned by the main navigation shell.
+const int _kTabFlights = 1;
+const int _kTabUmrah = 2;
+const int _kTabVisa = 3;
+const int _kTabDeals = 4;
 
 class HomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -50,6 +62,12 @@ class _HomeScreenState extends State<HomeScreen> {
     Provider.of<NotificationProvider>(context, listen: false).fetchNotifications();
   }
 
+  void _openNotifications() {
+    context.pushPremium(NotificationsScreen(onNavigateTab: widget.onTabChange));
+  }
+
+  void _openTours() => context.pushPremium(const ToursScreen());
+
   @override
   Widget build(BuildContext context) {
     final flightProvider = Provider.of<FlightProvider>(context);
@@ -58,483 +76,42 @@ class _HomeScreenState extends State<HomeScreen> {
     final visaProvider = Provider.of<VisaProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: RefreshIndicator(
+        color: AppColors.primary,
+        edgeOffset: HomeHeroSliver.toolbarHeight + MediaQuery.of(context).padding.top,
         onRefresh: () async => _loadAllData(),
         child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
-            // Luxury Custom Header Sliver
-            SliverAppBar(
-              expandedHeight: 120,
-              pinned: true,
-              backgroundColor: AppColors.primary,
-              flexibleSpace: FlexibleSpaceBar(
-                background: Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF204D90), Color(0xFF132E56)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Image.asset(
-                            AppAssets.logo,
-                            height: 38,
-                            errorBuilder: (context, error, stackTrace) => const Icon(
-                              Icons.flight_takeoff_rounded,
-                              color: AppColors.secondary,
-                              size: 32,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                AppStrings.appName,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: -0.3,
-                                ),
-                              ),
-                              Text(
-                                'Muscat • Dhaka',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      // Header Actions: Notifications (bKash style), Profile & Concierge
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Notification Bell
-                          Consumer<NotificationProvider>(
-                            builder: (context, notifProvider, _) {
-                              final unread = notifProvider.unreadCount;
-                              return Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  IconButton(
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.all(6),
-                                    icon: const Icon(Icons.notifications_outlined, color: Colors.white, size: 23),
-                                    onPressed: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  if (unread > 0)
-                                    Positioned(
-                                      top: 2,
-                                      right: 2,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(3),
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFFEF4444),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                                        child: Center(
-                                          child: Text(
-                                            unread > 9 ? '9+' : '$unread',
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 4),
-
-                          // Google Profile / Sign-in
-                          Consumer<AuthProvider>(
-                            builder: (context, authProvider, _) {
-                              final user = authProvider.currentUser;
-                              return InkWell(
-                                onTap: () => AuthBottomSheet.show(context),
-                                borderRadius: BorderRadius.circular(18),
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withAlpha(authProvider.isAuthenticated ? 255 : 40),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white.withAlpha(80), width: 1.5),
-                                  ),
-                                  child: Center(
-                                    child: authProvider.isAuthenticated && user != null
-                                        ? Text(
-                                            user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                                            style: const TextStyle(
-                                              color: AppColors.primary,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          )
-                                        : const Icon(Icons.person_outline_rounded, color: Colors.white, size: 18),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 8),
-
-                          // WhatsApp Concierge Button
-                          ElevatedButton.icon(
-                            onPressed: () => UrlHelper.launchWhatsApp(),
-                            icon: const Icon(Icons.chat_bubble_rounded, size: 14),
-                            label: const Text('Concierge'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.whatsapp,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                              textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-                              minimumSize: const Size(0, 32),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            HomeHeroSliver(
+              onNotifications: _openNotifications,
+              onProfile: () => AuthBottomSheet.show(context),
             ),
-
-            // Main Body Content
+            SliverToBoxAdapter(child: _buildSearchCard(flightProvider)),
             SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
-
-                  // Quick Category Navigation Pills
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildCategoryButton(
-                          icon: Icons.flight_rounded,
-                          label: 'Flights',
-                          color: AppColors.primary,
-                          onTap: () => widget.onTabChange(1),
-                        ),
-                        _buildCategoryButton(
-                          icon: Icons.beach_access_rounded,
-                          label: 'Tours',
-                          color: AppColors.secondary,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ToursScreen()),
-                          ),
-                        ),
-                        _buildCategoryButton(
-                          icon: Icons.mosque_rounded,
-                          label: 'Umrah',
-                          color: const Color(0xFF10B981),
-                          onTap: () => widget.onTabChange(2),
-                        ),
-                        _buildCategoryButton(
-                          icon: Icons.assignment_turned_in_rounded,
-                          label: 'Visas',
-                          color: const Color(0xFF8B5CF6),
-                          onTap: () => widget.onTabChange(3),
-                        ),
-                        _buildCategoryButton(
-                          icon: Icons.confirmation_number_rounded,
-                          label: 'Deals',
-                          color: const Color(0xFFEC4899),
-                          onTap: () => widget.onTabChange(4),
-                        ),
-                      ],
+                  const SizedBox(height: AppSpacing.xxl),
+                  FadeSlideIn(index: 1, child: _buildCategories()),
+                  const SizedBox(height: AppSpacing.xxl),
+                  _buildOffersSection(),
+                  _buildFlightsSection(flightProvider),
+                  _buildToursSection(tourProvider),
+                  _buildUmrahSection(umrahProvider),
+                  _buildVisaSection(visaProvider),
+                  const SizedBox(height: AppSpacing.sm),
+                  FadeSlideIn(
+                    index: 2,
+                    child: HomeTrustBlock(
+                      onWhatsApp: () => UrlHelper.launchWhatsApp(),
+                      // The support screen has no tab of its own, so this is
+                      // the way into it.
+                      onHelpCentre: () => context.pushPremium(const SupportScreen()),
                     ),
                   ),
-
-                  const SizedBox(height: 16),
-
-                  // Dynamic Campaign & Offers Banner Carousel (bKash style)
-                  Consumer<NotificationProvider>(
-                    builder: (context, notifProvider, _) {
-                      final campaigns = notifProvider.notifications
-                          .where((n) => n.image != null && n.image!.isNotEmpty)
-                          .toList();
-                      if (campaigns.isEmpty) return const SizedBox.shrink();
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionTitle(
-                            title: 'স্পেশাল অফার ও ক্যাম্পেইন',
-                            subtitle: 'মুসাফ্লাইয়ের সেরা ডিসকাউন্ট এবং ডিলসমূহ',
-                            actionText: 'সবগুলো দেখুন',
-                            onAction: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            height: 160,
-                            child: ListView.separated(
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: campaigns.length,
-                              separatorBuilder: (context, index) => const SizedBox(width: 12),
-                              itemBuilder: (context, index) {
-                                final campaign = campaigns[index];
-                                return InkWell(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => NotificationsScreen(onNavigateTab: widget.onTabChange),
-                                      ),
-                                    );
-                                  },
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    width: 280,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withAlpha(12),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          AppNetworkImage(
-                                            imageUrl: campaign.image!,
-                                            fit: BoxFit.cover,
-                                          ),
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  Colors.transparent,
-                                                  Colors.black.withAlpha(180),
-                                                ],
-                                                begin: Alignment.topCenter,
-                                                end: Alignment.bottomCenter,
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            top: 10,
-                                            left: 10,
-                                            child: Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFEF4444),
-                                                borderRadius: BorderRadius.circular(6),
-                                              ),
-                                              child: Text(
-                                                campaign.badgeText,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            bottom: 10,
-                                            left: 10,
-                                            right: 10,
-                                            child: Text(
-                                              campaign.title,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12.5,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                        ],
-                      );
-                    },
-                  ),
-
-                  // Flight Search Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: FlightSearchCard(
-                      provider: flightProvider,
-                      onSearch: () {
-                        flightProvider.executeSearch();
-                        widget.onTabChange(1); // Jump to Flights tab
-                      },
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Featured Flights Section
-                  SectionTitle(
-                    title: 'Popular Flights',
-                    subtitle: 'Lowest airfares from Dhaka and Muscat',
-                    actionText: 'View All',
-                    onAction: () => widget.onTabChange(1),
-                  ),
-                  if (flightProvider.flights.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: flightProvider.flights.take(2).map((flight) {
-                          return FlightCard(
-                            flight: flight,
-                            onBook: () => FlightBookingDialog.show(context, flight),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 16),
-
-                  // Popular Tour Packages Horizontal Slider
-                  SectionTitle(
-                    title: 'Holiday Packages',
-                    subtitle: 'Exclusive worldwide tour getaways',
-                    actionText: 'Explore',
-                    onAction: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const ToursScreen()),
-                    ),
-                  ),
-                  if (tourProvider.tours.isNotEmpty) ...[
-                    SizedBox(
-                      height: 270,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.only(left: 16),
-                        itemCount: tourProvider.tours.length,
-                        itemBuilder: (ctx, i) {
-                          return TourCard(
-                            tour: tourProvider.tours[i],
-                            isHorizontal: true,
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Umrah Spotlight Section
-                  SectionTitle(
-                    title: 'Umrah Pilgrimage',
-                    subtitle: 'All-inclusive premium packages with visa & hotels',
-                    actionText: 'All Packages',
-                    onAction: () => widget.onTabChange(2),
-                  ),
-                  if (umrahProvider.packages.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: UmrahCard(package: umrahProvider.packages.first),
-                    ),
-                  ],
-
-                  const SizedBox(height: 16),
-
-                  // Visa Services Section
-                  SectionTitle(
-                    title: 'Visa Services',
-                    subtitle: 'Fast processing with 99% document approval',
-                    actionText: 'View All',
-                    onAction: () => widget.onTabChange(3),
-                  ),
-                  if (visaProvider.visas.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Column(
-                        children: visaProvider.visas.take(2).map((visa) {
-                          return VisaCard(visa: visa);
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 20),
-
-                  // Why Choose Us Card
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Why Travel With MusaFly?',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildBenefitRow(Icons.verified_rounded, 'Verified Travel Partner', 'Official airline ticket distributor & Umrah organizer.'),
-                          const Divider(height: 20),
-                          _buildBenefitRow(Icons.price_check_rounded, 'Best Price Guarantee', 'Transparent pricing with no hidden charges.'),
-                          const Divider(height: 20),
-                          _buildBenefitRow(Icons.support_agent_rounded, '24/7 VIP Concierge', 'Real human support on WhatsApp & call anytime.'),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 110),
                 ],
               ),
             ),
@@ -544,61 +121,261 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 54,
-            height: 54,
-            decoration: BoxDecoration(
-              color: color.withAlpha(20),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: color.withAlpha(40)),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
+  // ───────────────────── Search card over the hero edge ─────────────────────
+
+  /// The card sits on its own navy shelf so it reads as floating over the
+  /// hero's lower edge while still scrolling away with the page.
+  Widget _buildSearchCard(FlightProvider flightProvider) {
+    return Stack(
+      children: [
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 54,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF143468), AppColors.primary],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
             ),
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+          child: FlightSearchCard(
+            provider: flightProvider,
+            onSearch: () {
+              flightProvider.executeSearch();
+              widget.onTabChange(_kTabFlights);
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildBenefitRow(IconData icon, String title, String subtitle) {
-    return Row(
+  // ───────────────────────────── Categories ─────────────────────────────
+
+  Widget _buildCategories() {
+    return HomeCategoryRow(
+      categories: [
+        HomeCategory(
+          icon: HomeCategoryIcons.flight,
+          label: 'Flights',
+          color: AppColors.catFlight,
+          onTap: () => widget.onTabChange(_kTabFlights),
+        ),
+        HomeCategory(
+          icon: HomeCategoryIcons.tour,
+          label: 'Tours',
+          color: AppColors.catTour,
+          onTap: _openTours,
+        ),
+        HomeCategory(
+          icon: HomeCategoryIcons.umrah,
+          label: 'Umrah',
+          color: AppColors.catUmrah,
+          onTap: () => widget.onTabChange(_kTabUmrah),
+        ),
+        HomeCategory(
+          icon: HomeCategoryIcons.visa,
+          label: 'Visas',
+          color: AppColors.catVisa,
+          onTap: () => widget.onTabChange(_kTabVisa),
+        ),
+        HomeCategory(
+          icon: HomeCategoryIcons.deal,
+          label: 'Deals',
+          color: AppColors.catDeal,
+          onTap: () => widget.onTabChange(_kTabDeals),
+        ),
+      ],
+    );
+  }
+
+  // ─────────────────────────────── Offers ───────────────────────────────
+
+  Widget _buildOffersSection() {
+    return Consumer<NotificationProvider>(
+      builder: (context, notif, _) {
+        final campaigns = notif.notifications
+            .where((n) => n.image != null && n.image!.isNotEmpty)
+            .toList();
+        if (campaigns.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              title: 'Offers for you',
+              subtitle: 'Hand-picked deals and seasonal fare drops',
+              actionText: 'See all',
+              onAction: _openNotifications,
+            ),
+            HomeOffersCarousel(campaigns: campaigns, onTap: _openNotifications),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────── Flights ───────────────────────────────
+
+  Widget _buildFlightsSection(FlightProvider provider) {
+    final flights = provider.flights.take(3).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.primarySubtle,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: AppColors.primary, size: 20),
+        SectionHeader(
+          title: 'Popular flights',
+          subtitle: 'Lowest airfares from Dhaka and Muscat',
+          actionText: 'View all',
+          onAction: () => widget.onTabChange(_kTabFlights),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(subtitle, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-            ],
+        if (provider.isLoading && flights.isEmpty)
+          const HomeListSkeleton(count: 2)
+        else if (flights.isEmpty)
+          HomeEmptyNote(
+            icon: PhosphorIconsDuotone.airplaneTilt,
+            message: 'No fares loaded right now. Search a route to see live prices.',
+            actionText: 'Search',
+            onAction: () => widget.onTabChange(_kTabFlights),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+            child: Column(
+              children: [
+                for (var i = 0; i < flights.length; i++)
+                  FadeSlideIn(
+                    index: i,
+                    child: FlightCard(
+                      flight: flights[i],
+                      onBook: () => FlightBookingDialog.show(context, flights[i]),
+                    ),
+                  ),
+              ],
+            ),
           ),
+        const SizedBox(height: AppSpacing.xl),
+      ],
+    );
+  }
+
+  // ──────────────────────────────── Tours ────────────────────────────────
+
+  Widget _buildToursSection(TourProvider provider) {
+    final tours = provider.tours;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Holiday packages',
+          subtitle: 'Curated worldwide getaways, flights included',
+          actionText: 'Explore',
+          onAction: _openTours,
         ),
+        if (provider.isLoading && tours.isEmpty)
+          const HomeStripSkeleton()
+        else if (tours.isEmpty)
+          HomeEmptyNote(
+            icon: PhosphorIconsDuotone.island,
+            tint: AppColors.catTour,
+            message: 'Holiday packages are being refreshed — check back shortly.',
+            actionText: 'Browse',
+            onAction: _openTours,
+          )
+        else
+          SizedBox(
+            height: 272,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.only(left: AppSpacing.page, right: AppSpacing.xs),
+              itemCount: tours.length,
+              itemBuilder: (ctx, i) => FadeSlideIn(
+                index: i,
+                child: TourCard(tour: tours[i], isHorizontal: true),
+              ),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.xxl),
+      ],
+    );
+  }
+
+  // ──────────────────────────────── Umrah ────────────────────────────────
+
+  Widget _buildUmrahSection(UmrahProvider provider) {
+    final packages = provider.packages;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Umrah pilgrimage',
+          subtitle: 'All-inclusive packages with visa, hotels and transfers',
+          actionText: 'All packages',
+          onAction: () => widget.onTabChange(_kTabUmrah),
+        ),
+        if (provider.isLoading && packages.isEmpty)
+          const HomeBlockSkeleton()
+        else if (packages.isEmpty)
+          HomeEmptyNote(
+            icon: PhosphorIconsDuotone.mosque,
+            tint: AppColors.catUmrah,
+            message: 'Umrah packages will appear here once published.',
+            actionText: 'View',
+            onAction: () => widget.onTabChange(_kTabUmrah),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+            child: FadeSlideIn(child: UmrahCard(package: packages.first)),
+          ),
+        const SizedBox(height: AppSpacing.xl),
+      ],
+    );
+  }
+
+  // ───────────────────────────────── Visa ─────────────────────────────────
+
+  Widget _buildVisaSection(VisaProvider provider) {
+    final visas = provider.visas.take(2).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(
+          title: 'Visa services',
+          subtitle: 'Fast processing with a 99% document approval rate',
+          actionText: 'View all',
+          onAction: () => widget.onTabChange(_kTabVisa),
+        ),
+        if (provider.isLoading && visas.isEmpty)
+          const HomeListSkeleton(count: 2, height: 96)
+        else if (visas.isEmpty)
+          HomeEmptyNote(
+            icon: PhosphorIconsDuotone.identificationCard,
+            tint: AppColors.catVisa,
+            message: 'Visa destinations are loading — pull down to refresh.',
+            actionText: 'View',
+            onAction: () => widget.onTabChange(_kTabVisa),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+            child: Column(
+              children: [
+                for (var i = 0; i < visas.length; i++)
+                  FadeSlideIn(index: i, child: VisaCard(visa: visas[i])),
+              ],
+            ),
+          ),
+        const SizedBox(height: AppSpacing.xl),
       ],
     );
   }

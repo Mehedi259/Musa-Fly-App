@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:musa_fly_app/core/constants/app_icons.dart';
+
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_design.dart';
 import '../../../../core/utils/currency_formatter.dart';
-import '../../../../core/widgets/app_network_image.dart';
+import '../../../../core/widgets/motion.dart';
+import '../../../../core/widgets/premium.dart';
 import '../../data/models/tour_model.dart';
 import '../screens/tour_detail_screen.dart';
+import 'travel_ui.dart';
 
 class TourCard extends StatelessWidget {
   final TourModel tour;
@@ -15,265 +21,140 @@ class TourCard extends StatelessWidget {
     this.isHorizontal = false,
   });
 
+  void _open(BuildContext context) => context.pushPremium(TourDetailScreen(tour: tour));
+
   @override
-  Widget build(BuildContext context) {
-    if (isHorizontal) {
-      return Container(
-        width: 260,
-        margin: const EdgeInsets.only(right: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+  Widget build(BuildContext context) =>
+      isHorizontal ? _horizontal(context) : _vertical(context);
+
+  Widget _horizontal(BuildContext context) {
+    return SizedBox(
+      width: 262,
+      child: PremiumCard(
+        clip: true,
+        margin: const EdgeInsets.only(right: AppSpacing.lg, bottom: 4),
+        shadow: AppShadows.medium,
+        onTap: () => _open(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            PhotoHeader(
+              imageUrl: tour.displayImage,
+              fallbackUrl: AppAssets.fallbackTour,
+              height: 156,
+              title: tour.destination,
+              titleSize: 17,
+              titleMaxLines: 1,
+              topLeft: ToneChip(
+                label: tour.duration,
+                icon: PhosphorIconsFill.clock,
+                tone: ChipTone.onImage,
+                dense: true,
+              ),
+              topRight: const ToneChip(
+                label: '4.8',
+                icon: PhosphorIconsFill.star,
+                tone: ChipTone.onImage,
+                dense: true,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
+              child: Text(
+                tour.inclusions.isEmpty ? 'Flights, stay & transfers arranged' : tour.inclusions,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+            ),
+            CardPriceFooter(
+              label: 'Starting at',
+              price: CurrencyFormatter.formatSmart(tour.price),
+              ctaLabel: 'View',
+              padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
             ),
           ],
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TourDetailScreen(tour: tour)),
+      ),
+    );
+  }
+
+  Widget _vertical(BuildContext context) {
+    return PremiumCard(
+      clip: true,
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      shadow: AppShadows.medium,
+      onTap: () => _open(context),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          PhotoHeader(
+            imageUrl: tour.displayImage,
+            fallbackUrl: AppAssets.fallbackTour,
+            height: 208,
+            title: tour.destination,
+            titleSize: 22,
+            titleMaxLines: 2,
+            topLeft: ToneChip(
+              label: tour.duration,
+              icon: PhosphorIconsFill.clock,
+              tone: ChipTone.onImage,
+            ),
+            topRight: const ToneChip(
+              label: '4.8',
+              icon: PhosphorIconsFill.star,
+              tone: ChipTone.onImage,
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image Banner
-              Stack(
-                children: [
-                  AppNetworkImage(
-                    imageUrl: tour.displayImage,
-                    width: 260,
-                    height: 140,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tour.inclusions.isEmpty
+                      ? 'Hotels, airport transfers and guided sightseeing included.'
+                      : tour.inclusions,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: AppColors.textSecondary,
                   ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withAlpha(150),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.access_time_rounded, color: AppColors.secondary, size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            tour.duration,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
                   children: [
-                    Text(
-                      tour.destination,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      tour.inclusions,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          CurrencyFormatter.formatSmart(tour.price),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                    Icon(PhosphorIconsFill.sealCheck, size: 15, color: AppColors.success),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        'Verified operator · free cancellation',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.primarySubtle,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Explore',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // Full Vertical Card
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(8),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => TourDetailScreen(tour: tour)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Stack(
-              children: [
-                AppNetworkImage(
-                  imageUrl: tour.displayImage,
-                  width: double.infinity,
-                  height: 180,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      CurrencyFormatter.formatSmart(tour.price),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 12,
-                  left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withAlpha(160),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.schedule_rounded, color: Colors.white, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          tour.duration,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                const SizedBox(height: AppSpacing.md),
+                const DashedDivider(),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    tour.destination,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    tour.inclusions,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: const [
-                          Icon(Icons.star_rounded, color: AppColors.secondary, size: 18),
-                          SizedBox(width: 4),
-                          Text(
-                            '5.0 (Featured Tour)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Text(
-                        'View Package →',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+          CardPriceFooter(
+            label: 'Starting at / person',
+            price: CurrencyFormatter.formatSmart(tour.price),
+            ctaLabel: 'View details',
+          ),
+        ],
       ),
     );
   }
