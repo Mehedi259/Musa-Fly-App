@@ -3,13 +3,19 @@ import 'package:intl/intl.dart';
 import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
+import '../../../../core/widgets/booking_ui.dart';
 import '../../../../core/widgets/motion.dart';
 import '../providers/flight_provider.dart';
 import 'airport_selector_sheet.dart';
+import 'flight_header.dart';
 
-/// The signature widget of the app: a navy "boarding console" that floats
-/// over the hero. Segmented trip type, a white route panel with a rotating
-/// swap control, compact detail tiles and a gold CTA.
+/// The flight search form, in the airy style the big travel apps use: a gold
+/// pill segmented control over a white card of full-width rows, with one big
+/// round gold action straddling the card's bottom edge.
+///
+/// Nothing here is dense or dark on purpose — the whitespace and the large
+/// city names are what make the form read as considered rather than cheap.
 class FlightSearchCard extends StatefulWidget {
   final FlightProvider provider;
   final VoidCallback onSearch;
@@ -25,236 +31,224 @@ class FlightSearchCard extends StatefulWidget {
 }
 
 class _FlightSearchCardState extends State<FlightSearchCard> {
-  /// Half-turns accumulated by the swap button, so each tap spins it 180°.
-  double _swapTurns = 0;
+  /// Room under the card for the round action that hangs off its edge.
+  static const double _actionOverhang = 40;
+
+  int _tabIndex = 0; // 0: One Way, 1: Round Way, 2: Multi City
 
   FlightProvider get provider => widget.provider;
+  bool get _isRound => _tabIndex == 1;
+  bool get _isMultiCity => _tabIndex == 2;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabIndex = provider.tripType == FlightSearchTripType.roundTrip ? 1 : 0;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isRound = provider.tripType == FlightSearchTripType.roundTrip;
-
-    return Container(
-      decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: AppShadows.elevated,
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          // Soft gold bloom in the top-right corner — keeps the navy from
-          // reading as a flat block.
-          Positioned(
-            right: -40,
-            top: -46,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    AppColors.secondary.withValues(alpha: 0.26),
-                    AppColors.secondary.withValues(alpha: 0.0),
-                  ],
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SegmentedTabs(
+          labels: [
+            context.tr('common.oneWay'),
+            context.tr('common.roundTrip'),
+            context.tr('flights.multiCity'),
+          ],
+          index: _tabIndex,
+          onChanged: (i) {
+            setState(() => _tabIndex = i);
+            if (i == 0) {
+              provider.setTripType(FlightSearchTripType.oneWay);
+            } else if (i == 1) {
+              provider.setTripType(FlightSearchTripType.roundTrip);
+            }
+          },
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        BookingCard(
+          action: RoundAction(
+            label: context.tr('flights.searchCta'),
+            onTap: widget.onSearch,
+          ),
+          children: [
+            _routeRows(context),
+            if (!_isMultiCity) ...[
+              BookingFieldPair(
+                left: _dateField(context),
+                right: _returnField(context),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _TripTypeSwitch(
-                  isRound: isRound,
-                  onChanged: provider.setTripType,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                _routePanel(context),
-                const SizedBox(height: AppSpacing.md),
-                AnimatedSize(
-                  duration: AppMotion.base,
-                  curve: AppMotion.emphasized,
-                  alignment: Alignment.topCenter,
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _DetailTile(
-                          label: 'DEPARTURE',
-                          value: DateFormat(
-                            'EEE, dd MMM',
-                          ).format(provider.departureDate),
-                          icon: PhosphorIconsRegular.calendarBlank,
-                          onTap: () => _pickDepartureDate(context),
-                        ),
-                      ),
-                      if (isRound) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _DetailTile(
-                            label: 'RETURN',
-                            value: provider.returnDate != null
-                                ? DateFormat(
-                                    'EEE, dd MMM',
-                                  ).format(provider.returnDate!)
-                                : 'Add date',
-                            icon: PhosphorIconsRegular.calendarCheck,
-                            muted: provider.returnDate == null,
-                            onTap: () => _pickReturnDate(context),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _DetailTile(
-                        label: 'TRAVELLERS',
-                        value:
-                            '${provider.passengers} Traveller${provider.passengers > 1 ? 's' : ''}',
-                        icon: PhosphorIconsRegular.users,
-                        onTap: () => _showPassengerPicker(context),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: _DetailTile(
-                        label: 'CLASS',
-                        value: provider.travelClass,
-                        icon: PhosphorIconsRegular.seat,
-                        onTap: () => _showClassPicker(context),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                _searchButton(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ───────────────────────── Route panel ─────────────────────────
-
-  Widget _routePanel(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Stack(
-        alignment: Alignment.centerRight,
-        children: [
-          Column(
-            children: [
-              _AirportRow(
-                label: 'FROM',
-                code: provider.originCode,
-                city: provider.originCity,
-                icon: PhosphorIconsDuotone.airplaneTakeoff,
-                onTap: () => AirportSelectorSheet.show(
-                  context,
-                  title: 'Departure city',
-                  onSelect: provider.setOrigin,
-                ),
+            ] else ...[
+              BookingField(
+                icon: PhosphorIconsRegular.calendarBlank,
+                label: context.tr('common.departure'),
+                value: DateFormat('d MMM').format(provider.departureDate),
+                hint: DateFormat('EEEE').format(provider.departureDate),
+                onTap: () => _pickDepartureDate(context),
               ),
               Padding(
-                padding: const EdgeInsets.only(left: 60, right: 70),
-                child: Container(height: 1, color: AppColors.divider),
-              ),
-              _AirportRow(
-                label: 'TO',
-                code: provider.destCode,
-                city: provider.destCity,
-                icon: PhosphorIconsDuotone.airplaneLanding,
-                onTap: () => AirportSelectorSheet.show(
-                  context,
-                  title: 'Destination city',
-                  onSelect: provider.setDestination,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                child: Center(
+                  child: Pressable(
+                    onTap: () {
+                      _toast(context, 'Added next flight segment');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(color: AppColors.primaryLight.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.primary,
+                            ),
+                            child: const Icon(PhosphorIconsBold.plus, color: Colors.white, size: 10),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'ADD CITY',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.primary,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
-          ),
-          Positioned(
-            right: 14,
-            child: Pressable(
-              onTap: () {
-                setState(() => _swapTurns += 0.5);
-                provider.swapAirports();
-              },
-              scale: 0.88,
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.secondary, width: 1.5),
-                  boxShadow: AppShadows.glow(
-                    AppColors.secondary,
-                    opacity: 0.22,
-                  ),
-                ),
-                child: AnimatedRotation(
-                  turns: _swapTurns,
-                  duration: AppMotion.base,
-                  curve: AppMotion.emphasized,
-                  child: Icon(
-                    PhosphorIconsBold.arrowsDownUp,
-                    size: 18,
-                    color: AppColors.secondaryDark,
-                  ),
-                ),
+            BookingFieldPair(
+              divider: false,
+              left: _MiniField(
+                icon: PhosphorIconsRegular.users,
+                label: context.tr('common.travelers'),
+                value: _travelerLabel(context),
+                onTap: () => _showPassengerPicker(context),
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _searchButton() {
-    return Pressable(
-      onTap: widget.onSearch,
-      child: Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: AppColors.goldCta,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: AppShadows.glow(AppColors.secondary, opacity: 0.42),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              PhosphorIconsBold.magnifyingGlass,
-              size: 19,
-              color: AppColors.primaryDark,
-            ),
-            const SizedBox(width: 9),
-            const Text(
-              'Search Flights',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
-                color: AppColors.primaryDark,
+              right: _MiniField(
+                icon: PhosphorIconsRegular.seat,
+                label: context.tr('common.class'),
+                value: _classLabel(context, provider.travelClass),
+                onTap: () => _showClassPicker(context),
               ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: _actionOverhang),
+      ],
     );
+  }
+
+  // ───────────────────────── Route rows ─────────────────────────
+
+  /// FROM and TO stacked, with the circular swap control sitting on the right
+  /// edge of the hairline between them.
+  Widget _routeRows(BuildContext context) {
+    return Stack(
+      alignment: Alignment.centerRight,
+      children: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            BookingField(
+              icon: PhosphorIconsRegular.airplaneTakeoff,
+              label: context.tr('common.from'),
+              value: provider.originCity,
+              hint: _airportLine(provider.originCode),
+              trailing: const SizedBox(width: 34),
+              onTap: () => AirportSelectorSheet.show(
+                context,
+                title: context.trOnce('flights.fromTitle'),
+                onSelect: provider.setOrigin,
+              ),
+            ),
+            BookingField(
+              icon: PhosphorIconsRegular.airplaneLanding,
+              label: context.tr('common.to'),
+              value: provider.destCity,
+              hint: _airportLine(provider.destCode),
+              trailing: const SizedBox(width: 34),
+              onTap: () => AirportSelectorSheet.show(
+                context,
+                title: context.trOnce('flights.toTitle'),
+                onSelect: provider.setDestination,
+              ),
+            ),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.lg),
+          child: SwapButton(onTap: provider.swapAirports),
+        ),
+      ],
+    );
+  }
+
+  /// "DAC, Hazrat Shahjalal International Airport" — the code plus the full
+  /// airport name when we know it, otherwise just the code.
+  String _airportLine(String code) {
+    for (final a in AirportSelectorSheet.airports) {
+      if (a.code == code) return '$code, ${a.name}';
+    }
+    return code;
+  }
+
+  // ───────────────────────── Date fields ─────────────────────────
+
+  Widget _dateField(BuildContext context) {
+    return _MiniField(
+      icon: PhosphorIconsRegular.calendarBlank,
+      label: context.tr('common.departure'),
+      value: DateFormat('d MMM').format(provider.departureDate),
+      hint: DateFormat('EEEE').format(provider.departureDate),
+      onTap: () => _pickDepartureDate(context),
+    );
+  }
+
+  Widget _returnField(BuildContext context) {
+    final hasReturn = _isRound && provider.returnDate != null;
+    return _MiniField(
+      icon: PhosphorIconsRegular.calendarCheck,
+      label: hasReturn ? context.tr('common.return') : '',
+      value: hasReturn
+          ? DateFormat('d MMM').format(provider.returnDate!)
+          : context.tr('flights.addReturn'),
+      hint: hasReturn
+          ? DateFormat('EEEE').format(provider.returnDate!)
+          : context.tr('flights.returnNudge'),
+      hintTone: hasReturn ? null : AppColors.primaryLight,
+      muted: !hasReturn,
+      onTap: () => _pickReturnDate(context),
+    );
+  }
+
+  String _travelerLabel(BuildContext context) {
+    final n = provider.passengers;
+    return n.toString().padLeft(2, '0');
+  }
+
+  static String _classLabel(BuildContext context, String raw) {
+    const keys = <String, String>{
+      'Economy': 'flights.classEconomy',
+      'Premium Economy': 'flights.classPremium',
+      'Business': 'flights.classBusiness',
+      'First Class': 'flights.classFirst',
+    };
+    final key = keys[raw];
+    return key == null ? raw : context.tr(key);
   }
 
   // ───────────────────────── Pickers ─────────────────────────
@@ -274,13 +268,16 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
     final picked = await showDatePicker(
       context: context,
       initialDate:
-          provider.returnDate ??
-          provider.departureDate.add(const Duration(days: 7)),
+          provider.returnDate ?? provider.departureDate.add(const Duration(days: 7)),
       firstDate: provider.departureDate,
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: _datePickerTheme,
     );
-    if (picked != null) provider.setReturnDate(picked);
+    if (picked == null) return;
+    // Picking a return date is itself the switch to a round trip — the user
+    // should not have to set the tab first.
+    provider.setReturnDate(picked);
+    provider.setTripType(FlightSearchTripType.roundTrip);
   }
 
   static Widget _datePickerTheme(BuildContext context, Widget? child) {
@@ -307,34 +304,34 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
   void _showPassengerPicker(BuildContext context) {
     _showSheet(
       context,
-      title: 'Who is travelling?',
-      subtitle: 'Adults aged 12 and over',
-      child: Wrap(
+      title: context.trOnce('flights.whoTravels'),
+      subtitle: context.trOnce('flights.whoTravelsNote'),
+      builder: (ctx) => Wrap(
         spacing: 10,
         runSpacing: 10,
         children: List.generate(6, (index) {
           final count = index + 1;
           final selected = provider.passengers == count;
+          final word = ctx.tr(count == 1 ? 'flights.traveler' : 'flights.travelers');
           return Pressable(
             onTap: () {
               provider.setPassengers(count);
-              Navigator.pop(context);
+              Navigator.pop(ctx);
             },
             child: AnimatedContainer(
               duration: AppMotion.fast,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
               decoration: BoxDecoration(
-                color: selected ? AppColors.primary : AppColors.background,
+                color: selected ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.circular(AppRadius.pill),
                 border: Border.all(
                   color: selected ? AppColors.primary : AppColors.border,
                 ),
-                boxShadow: selected
-                    ? AppShadows.glow(AppColors.primary, opacity: 0.2)
-                    : null,
               ),
               child: Text(
-                '$count Adult${count > 1 ? 's' : ''}',
+                '$count $word',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13.5,
                   fontWeight: FontWeight.w700,
@@ -349,18 +346,18 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
   }
 
   void _showClassPicker(BuildContext context) {
-    final options = <String, IconData>{
-      'Economy': PhosphorIconsDuotone.seat,
-      'Premium Economy': PhosphorIconsDuotone.armchair,
-      'Business': PhosphorIconsDuotone.briefcase,
-      'First Class': PhosphorIconsDuotone.crownSimple,
+    const options = <String, IconData>{
+      'Economy': PhosphorIconsRegular.seat,
+      'Premium Economy': PhosphorIconsRegular.armchair,
+      'Business': PhosphorIconsRegular.briefcase,
+      'First Class': PhosphorIconsRegular.crownSimple,
     };
 
     _showSheet(
       context,
-      title: 'Travel class',
-      subtitle: 'Cabin preference for every traveller',
-      child: Column(
+      title: context.trOnce('flights.classTitle'),
+      subtitle: context.trOnce('flights.classNote'),
+      builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: options.entries.map((e) {
           final selected = provider.travelClass == e.key;
@@ -369,14 +366,11 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
             child: Pressable(
               onTap: () {
                 provider.setTravelClass(e.key);
-                Navigator.pop(context);
+                Navigator.pop(ctx);
               },
               child: AnimatedContainer(
                 duration: AppMotion.fast,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
-                ),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.primarySubtle : Colors.white,
                   borderRadius: BorderRadius.circular(AppRadius.md),
@@ -389,28 +383,24 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
                   children: [
                     Icon(
                       e.value,
-                      size: 22,
-                      color: selected
-                          ? AppColors.primary
-                          : AppColors.textSecondary,
+                      size: 21,
+                      color: selected ? AppColors.primary : AppColors.textSecondary,
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
-                        e.key,
+                        _classLabel(ctx, e.key),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 14.5,
-                          fontWeight: selected
-                              ? FontWeight.w800
-                              : FontWeight.w600,
-                          color: selected
-                              ? AppColors.primary
-                              : AppColors.textPrimary,
+                          fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                          color: selected ? AppColors.primary : AppColors.textPrimary,
                         ),
                       ),
                     ),
                     if (selected)
-                      Icon(
+                      const Icon(
                         PhosphorIconsFill.checkCircle,
                         size: 20,
                         color: AppColors.primary,
@@ -429,7 +419,7 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
     BuildContext context, {
     required String title,
     String? subtitle,
-    required Widget child,
+    required WidgetBuilder builder,
   }) {
     showModalBottomSheet(
       context: context,
@@ -452,10 +442,12 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Center(child: _SheetHandle()),
+                const Center(child: SheetHandle()),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
                   title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -467,6 +459,8 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 12.5,
                       color: AppColors.textSecondary,
@@ -474,7 +468,7 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
                   ),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                child,
+                Builder(builder: builder),
               ],
             ),
           ),
@@ -482,149 +476,41 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
       ),
     );
   }
-}
 
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 4,
-      decoration: BoxDecoration(
-        color: AppColors.borderStrong,
-        borderRadius: BorderRadius.circular(4),
-      ),
-    );
-  }
-}
-
-// ───────────────────────── Segmented control ─────────────────────────
-
-/// Two-up segmented control with a white indicator that slides between
-/// the segments rather than popping from one to the other.
-class _TripTypeSwitch extends StatelessWidget {
-  final bool isRound;
-  final ValueChanged<FlightSearchTripType> onChanged;
-
-  const _TripTypeSwitch({required this.isRound, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    const pad = 4.0;
-    return Container(
-      padding: const EdgeInsets.all(pad),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final segment = constraints.maxWidth / 2;
-          return SizedBox(
-            height: 38,
-            child: Stack(
-              children: [
-                AnimatedPositioned(
-                  duration: AppMotion.base,
-                  curve: AppMotion.emphasized,
-                  left: isRound ? segment : 0,
-                  top: 0,
-                  bottom: 0,
-                  width: segment,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                      boxShadow: AppShadows.soft,
-                    ),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _segment(
-                        'One-way',
-                        PhosphorIconsBold.arrowRight,
-                        !isRound,
-                        () => onChanged(FlightSearchTripType.oneWay),
-                      ),
-                    ),
-                    Expanded(
-                      child: _segment(
-                        'Round-trip',
-                        PhosphorIconsBold.arrowsLeftRight,
-                        isRound,
-                        () => onChanged(FlightSearchTripType.roundTrip),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _segment(
-    String label,
-    IconData icon,
-    bool selected,
-    VoidCallback onTap,
-  ) {
-    final color = selected
-        ? AppColors.primaryDark
-        : Colors.white.withValues(alpha: 0.82);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Center(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 6),
-            Flexible(
-              child: AnimatedDefaultTextStyle(
-                duration: AppMotion.fast,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  fontSize: 13,
-                ),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
+  static void _toast(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: AppColors.primaryDark,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
+        duration: const Duration(seconds: 2),
       ),
     );
   }
 }
 
-// ───────────────────────── Rows & tiles ─────────────────────────
-
-class _AirportRow extends StatelessWidget {
-  final String label;
-  final String code;
-  final String city;
+/// Half-width sibling of [BookingField]: same label-over-value shape, tuned so
+/// a long Bangla line still fits beside another field at 320pt.
+class _MiniField extends StatelessWidget {
   final IconData icon;
+  final String label;
+  final String value;
+  final String? hint;
+  final Color? hintTone;
+  final bool muted;
   final VoidCallback onTap;
 
-  const _AirportRow({
-    required this.label,
-    required this.code,
-    required this.city,
+  const _MiniField({
     required this.icon,
+    required this.label,
+    required this.value,
     required this.onTap,
+    this.hint,
+    this.hintTone,
+    this.muted = false,
   });
 
   @override
@@ -633,146 +519,61 @@ class _AirportRow extends StatelessWidget {
       onTap: onTap,
       scale: 0.99,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 13, 66, 13),
-        child: Row(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.primarySubtle,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-              ),
-              child: Icon(icon, color: AppColors.primary, size: 18),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
+            Row(
+              children: [
+                Icon(icon, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.8,
                       color: AppColors.textMuted,
-                      letterSpacing: 1.1,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          city,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.textPrimary,
-                            letterSpacing: -0.3,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySubtle,
-                          borderRadius: BorderRadius.circular(AppRadius.xs),
-                        ),
-                        child: Text(
-                          code,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.primary,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 5),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+                height: 1.2,
+                color: muted ? AppColors.primary : AppColors.textPrimary,
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailTile extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool muted;
-
-  const _DetailTile({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.onTap,
-    this.muted = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: AppColors.secondaryLight, size: 16),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.9,
-                      color: Colors.white.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    value,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: false,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: muted
-                          ? Colors.white.withValues(alpha: 0.65)
-                          : Colors.white,
-                      fontFeatures: AppText.tabular,
-                    ),
-                  ),
-                ],
+            if (hint != null && hint!.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                hint!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: hintTone == null ? FontWeight.w500 : FontWeight.w700,
+                  color: hintTone ?? AppColors.textSecondary,
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

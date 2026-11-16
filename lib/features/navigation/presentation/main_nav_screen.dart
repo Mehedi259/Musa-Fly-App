@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../../core/constants/app_colors.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../core/l10n/app_text.dart';
+import '../../auth/presentation/screens/profile_screen.dart';
 import '../../deals/presentation/screens/deals_screen.dart';
-import '../../flights/presentation/screens/flights_screen.dart';
 import '../../home/presentation/screens/home_screen.dart';
+import '../../notifications/presentation/screens/notifications_screen.dart';
 import '../../support/presentation/screens/support_screen.dart';
-import '../../umrah/presentation/screens/umrah_screen.dart';
-import '../../visas/presentation/screens/visa_screen.dart';
 import 'premium_nav_bar.dart';
 
 class MainNavScreen extends StatefulWidget {
@@ -17,30 +17,55 @@ class MainNavScreen extends StatefulWidget {
   State<MainNavScreen> createState() => _MainNavScreenState();
 }
 
-class _MainNavScreenState extends State<MainNavScreen> {
+class _MainNavScreenState extends State<MainNavScreen> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  bool _switching = false;
 
-  void _onTabTapped(int index) {
-    if (index == _currentIndex) return;
+  // Drives the fade-through between tabs: the outgoing screen dips away,
+  // the incoming one rises into place. The screens themselves stay mounted
+  // in the IndexedStack, so scroll positions and loaded data survive.
+  late final AnimationController _fade = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 210),
+    value: 1,
+  );
+
+  late final Animation<double> _curve = CurvedAnimation(
+    parent: _fade,
+    curve: Curves.easeOut,
+    reverseCurve: Curves.easeIn,
+  );
+
+  @override
+  void dispose() {
+    _fade.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onTabTapped(int index) async {
+    if (index == _currentIndex || _switching) return;
+    _switching = true;
+    HapticFeedback.selectionClick();
+
+    await _fade.reverse();
+    if (!mounted) return;
     setState(() => _currentIndex = index);
+    await _fade.forward();
+    _switching = false;
   }
 
   @override
   Widget build(BuildContext context) {
     final screens = [
       HomeScreen(onTabChange: _onTabTapped),
-      const FlightsScreen(),
-      const UmrahScreen(),
-      const VisaScreen(),
       const DealsScreen(),
       const SupportScreen(),
+      NotificationsScreen(onNavigateTab: _onTabTapped),
+      const ProfileScreen(),
     ];
 
-    // Every tab but Flights opens on a navy hero, so the status bar needs
-    // light glyphs there and dark ones over the Flights screen's white bar.
-    // Setting it here keeps the clock readable no matter which tab is shown;
-    // pushed screens override it with their own AnnotatedRegion.
-    final lightStatusBar = _currentIndex != 1;
+    // Home opens on a photographic hero, while all other pages are white.
+    final lightStatusBar = _currentIndex == 0;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -50,13 +75,22 @@ class _MainNavScreenState extends State<MainNavScreen> {
       ),
       child: Scaffold(
         backgroundColor: AppColors.background,
-        extendBody: true,
-        // IndexedStack keeps each tab's scroll position and loaded data.
-        body: IndexedStack(index: _currentIndex, children: screens),
+        body: FadeTransition(
+          opacity: _curve,
+          child: AnimatedBuilder(
+            animation: _curve,
+            builder: (context, child) => Transform.translate(
+              offset: Offset(0, 10 * (1 - _curve.value)),
+              child: child,
+            ),
+            child: IndexedStack(index: _currentIndex, children: screens),
+          ),
+        ),
         bottomNavigationBar: PremiumNavBar(
           currentIndex: _currentIndex >= kNavDestinations.length ? 4 : _currentIndex,
           onTap: _onTabTapped,
           destinations: kNavDestinations,
+          label: context.tr,
         ),
       ),
     );

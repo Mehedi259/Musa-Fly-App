@@ -1,87 +1,128 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:musa_fly_app/core/constants/app_icons.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_design.dart';
+import '../../../core/constants/app_icons.dart';
 
 class NavDestination {
   final IconData icon;
   final IconData activeIcon;
-  final String label;
+
+  /// Key into the string tables, so the bar follows the chosen language.
+  final String labelKey;
 
   const NavDestination({
     required this.icon,
     required this.activeIcon,
-    required this.label,
+    required this.labelKey,
   });
 }
 
-/// Floating bottom bar. The selected item becomes a navy pill that grows
-/// to reveal its label, while the others stay as plain icons.
+/// Bottom bar with a single indicator that glides between items rather than
+/// snapping. The active icon lifts, scales and recolours as the indicator
+/// arrives, so moving between tabs reads as one continuous motion.
 class PremiumNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
   final List<NavDestination> destinations;
+
+  /// Resolves a destination's label key for the active language.
+  final String Function(String key) label;
 
   const PremiumNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
     required this.destinations,
+    required this.label,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        MediaQuery.of(context).padding.bottom > 0
-            ? AppSpacing.sm
-            : AppSpacing.md,
-      ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryDark.withValues(alpha: 0.1),
-            blurRadius: 30,
-            offset: const Offset(0, -8),
+            color: AppColors.primaryDark.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
           ),
         ],
       ),
       child: SafeArea(
         top: false,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            for (var i = 0; i < destinations.length; i++)
-              _NavPill(
-                destination: destinations[i],
-                selected: currentIndex == i,
-                onTap: () {
-                  if (currentIndex != i) HapticFeedback.selectionClick();
-                  onTap(i);
-                },
-              ),
-          ],
+        child: SizedBox(
+          height: 66,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final slot = constraints.maxWidth / destinations.length;
+
+              return Stack(
+                children: [
+                  // The travelling indicator — one widget for the whole bar,
+                  // which is what makes the movement continuous.
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 420),
+                    curve: Curves.easeOutQuint,
+                    left: slot * currentIndex,
+                    top: 0,
+                    width: slot,
+                    height: 66,
+                    child: Center(
+                      child: Container(
+                        width: 46,
+                        height: 46,
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.32),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      for (var i = 0; i < destinations.length; i++)
+                        Expanded(
+                          child: _NavItem(
+                            destination: destinations[i],
+                            label: label(destinations[i].labelKey),
+                            selected: currentIndex == i,
+                            onTap: () {
+                              if (currentIndex != i) HapticFeedback.selectionClick();
+                              onTap(i);
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
   }
 }
 
-class _NavPill extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final NavDestination destination;
+  final String label;
   final bool selected;
   final VoidCallback onTap;
 
-  const _NavPill({
+  const _NavItem({
     required this.destination,
+    required this.label,
     required this.selected,
     required this.onTap,
   });
@@ -91,54 +132,44 @@ class _NavPill extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      // The visible pill is only ~48pt wide when deselected, which left wide
-      // dead gaps between items. This transparent padding sits inside the
-      // detector, so the tap target spans the full slot and the full bar height.
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        child: AnimatedContainer(
-          duration: AppMotion.base,
-          curve: AppMotion.emphasized,
-          height: 46,
-          padding: EdgeInsets.symmetric(horizontal: selected ? 16 : 13),
-          decoration: BoxDecoration(
-            gradient: selected ? AppColors.primaryGradient : null,
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            boxShadow: selected
-                ? AppShadows.glow(AppColors.primary, opacity: 0.3)
-                : null,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      // Animates its own slice of the transition; the indicator behind it
+      // carries the horizontal movement.
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: selected ? 1 : 0),
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOutQuint,
+        builder: (context, t, _) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AnimatedSwitcher(
-                duration: AppMotion.fast,
-                child: Icon(
-                  selected ? destination.activeIcon : destination.icon,
-                  key: ValueKey(selected),
-                  size: 22,
-                  color: selected ? Colors.white : AppColors.textMuted,
+              Transform.translate(
+                offset: Offset(0, -5 * t),
+                child: Transform.scale(
+                  scale: 1 + 0.08 * t,
+                  child: Icon(
+                    selected ? destination.activeIcon : destination.icon,
+                    size: 23,
+                    color: Color.lerp(AppColors.textMuted, Colors.white, t),
+                  ),
                 ),
               ),
-              // Label slides out of the pill when the item is deselected.
-              ClipRect(
-                child: AnimatedAlign(
-                  duration: AppMotion.base,
-                  curve: AppMotion.emphasized,
-                  alignment: Alignment.centerLeft,
-                  widthFactor: selected ? 1.0 : 0.0,
-                  child: AnimatedOpacity(
-                    duration: AppMotion.fast,
-                    opacity: selected ? 1 : 0,
+              // The label fades and slides away as the tile is taken over by
+              // the indicator, leaving just the icon on the pill.
+              Flexible(
+                child: Opacity(
+                  opacity: 1 - t,
+                  child: Transform.translate(
+                    offset: Offset(0, 6 * t),
                     child: Padding(
-                      padding: const EdgeInsets.only(left: 7),
+                      padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        destination.label,
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.1,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ),
@@ -146,8 +177,8 @@ class _NavPill extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -158,26 +189,26 @@ const kNavDestinations = <NavDestination>[
   NavDestination(
     icon: PhosphorIconsRegular.house,
     activeIcon: PhosphorIconsFill.house,
-    label: 'Home',
+    labelKey: 'nav.home',
   ),
   NavDestination(
-    icon: PhosphorIconsRegular.airplaneTilt,
-    activeIcon: PhosphorIconsFill.airplaneTilt,
-    label: 'Flights',
+    icon: PhosphorIconsRegular.suitcaseSimple,
+    activeIcon: PhosphorIconsFill.suitcaseSimple,
+    labelKey: 'nav.bookings',
   ),
   NavDestination(
-    icon: PhosphorIconsRegular.mosque,
-    activeIcon: PhosphorIconsFill.mosque,
-    label: 'Umrah',
+    icon: PhosphorIconsRegular.chatCircleDots,
+    activeIcon: PhosphorIconsFill.chatCircleDots,
+    labelKey: 'nav.chat',
   ),
   NavDestination(
-    icon: PhosphorIconsRegular.identificationCard,
-    activeIcon: PhosphorIconsFill.identificationCard,
-    label: 'Visa',
+    icon: PhosphorIconsRegular.paperPlaneTilt,
+    activeIcon: PhosphorIconsFill.paperPlaneTilt,
+    labelKey: 'nav.inbox',
   ),
   NavDestination(
-    icon: PhosphorIconsRegular.ticket,
-    activeIcon: PhosphorIconsFill.ticket,
-    label: 'Trips',
+    icon: PhosphorIconsRegular.user,
+    activeIcon: PhosphorIconsFill.user,
+    labelKey: 'nav.profile',
   ),
 ];
