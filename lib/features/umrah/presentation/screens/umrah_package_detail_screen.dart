@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/url_helper.dart';
 import '../../../../core/widgets/custom_text_field.dart';
@@ -211,9 +212,11 @@ class _UmrahPackageDetailScreenState extends State<UmrahPackageDetailScreen> {
         ],
       ),
       bottomNavigationBar: StickyActionBar(
-        priceLabel: 'Per pilgrim',
+        priceLabel: context.pick('Per pilgrim', 'প্রতি যাত্রী'),
         priceValue: price,
-        priceNote: 'all-in',
+        priceNote: context.isBangla
+            ? '≈ ${CurrencyFormatter.convertOmrToBdt(pkg.price, banglaDigits: true)}'
+            : 'all-in',
         secondary: SoftIconButton(
           icon: PhosphorIconsFill.whatsappLogo,
           color: AppColors.whatsapp,
@@ -280,7 +283,7 @@ class _UmrahBookingSheetState extends State<_UmrahBookingSheet> {
         travelDate: _preferredDate,
         leadSource: 'Mobile App',
         dealPrice: widget.package.price,
-        currency: 'USD',
+        currency: 'OMR',
       );
 
       await DealRepository().createDeal(deal);
@@ -334,9 +337,10 @@ class _UmrahBookingSheetState extends State<_UmrahBookingSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SheetHeader(
-                title: 'Book ${widget.package.cleanTitle}',
-                subtitle:
-                    '${widget.package.duration} · ${CurrencyFormatter.formatSmart(widget.package.price)} per pilgrim',
+                title: context.pick('Book ${widget.package.cleanTitle}', '${widget.package.cleanTitle} বুকিং'),
+                subtitle: context.isBangla
+                    ? '${widget.package.duration} · ${CurrencyFormatter.formatSmart(widget.package.price)} (≈ ${CurrencyFormatter.convertOmrToBdt(widget.package.price, banglaDigits: true)})'
+                    : '${widget.package.duration} · ${CurrencyFormatter.formatSmart(widget.package.price)} per pilgrim',
               ),
               const SizedBox(height: AppSpacing.lg),
               CustomTextField(

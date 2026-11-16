@@ -29,7 +29,7 @@ class DealModel {
     this.airlineName,
     this.leadSource = 'Mobile App',
     required this.dealPrice,
-    this.currency = 'USD',
+    this.currency = 'OMR',
     this.createdAt,
   });
 
@@ -47,7 +47,7 @@ class DealModel {
       airlineName: json['airline_name'],
       leadSource: json['lead_source'] ?? 'Mobile App',
       dealPrice: double.tryParse(json['deal_price']?.toString() ?? '0') ?? 0.0,
-      currency: json['currency'] ?? 'USD',
+      currency: json['currency'] ?? 'OMR',
       createdAt: DateTime.tryParse(json['created_at']?.toString() ?? ''),
     );
   }

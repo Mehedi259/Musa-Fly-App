@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../data/models/tour_model.dart';
 import '../providers/tour_provider.dart';
@@ -53,12 +54,17 @@ class _ToursScreenState extends State<ToursScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: ListHero(
-                eyebrow: 'Holidays & Tours',
-                title: 'Curated escapes,\nplanned end to end',
-                subtitle:
-                    'Hand-picked holiday packages with flights, hotels, transfers and guided sightseeing.',
+                eyebrow: context.pick('Holidays & Tours', 'হলিডে ও ট্যুরস'),
+                title: context.pick(
+                  'Curated escapes,\nplanned end to end',
+                  'বাছাই করা হলিডে,\nসম্পূর্ণ পরিকল্পিত ভ্রমণ',
+                ),
+                subtitle: context.pick(
+                  'Hand-picked holiday packages with flights, hotels, transfers and guided sightseeing.',
+                  'ফ্লাইট, হোটেল, ট্রান্সফার ও গাইডেড সাইটসিয়িং সহ নির্বাচিত হলিডে প্যাকেজ।',
+                ),
                 icon: PhosphorIconsFill.airplaneTilt,
-                searchHint: 'Search Dubai, Maldives, Alps…',
+                searchHint: context.pick('Search Dubai, Maldives, Alps…', 'দুবাই, মালদ্বীপ বা পছন্দের গন্তব্য খুঁজুন…'),
                 onSearchChanged: (val) => setState(() => _searchQuery = val),
                 onRefresh: () => provider.fetchTours(),
               ),

@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
@@ -103,9 +104,12 @@ class UmrahCard extends StatelessWidget {
             ),
           ),
           CardPriceFooter(
-            label: 'Starting at / pilgrim',
+            label: context.pick('Starting at / pilgrim', 'শুরু হচ্ছে / প্রতি যাত্রী'),
             price: CurrencyFormatter.formatSmart(package.price),
-            ctaLabel: 'View package',
+            note: context.isBangla
+                ? '≈ ${CurrencyFormatter.convertOmrToBdt(package.price, banglaDigits: true)}'
+                : null,
+            ctaLabel: context.pick('View package', 'প্যাকেজ দেখুন'),
             goldCta: true,
           ),
         ],

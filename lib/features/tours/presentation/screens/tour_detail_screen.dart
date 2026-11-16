@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/url_helper.dart';
 import '../../../../core/widgets/custom_text_field.dart';
@@ -181,9 +182,11 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
         ],
       ),
       bottomNavigationBar: StickyActionBar(
-        priceLabel: 'Starting at',
+        priceLabel: context.pick('Starting at', 'শুরু হচ্ছে'),
         priceValue: price,
-        priceNote: 'per person',
+        priceNote: context.isBangla
+            ? '≈ ${CurrencyFormatter.convertOmrToBdt(tour.price, banglaDigits: true)} · প্রতি জন'
+            : 'per person',
         secondary: SoftIconButton(
           icon: PhosphorIconsFill.whatsappLogo,
           color: AppColors.whatsapp,
@@ -251,7 +254,7 @@ class _TourBookingSheetState extends State<_TourBookingSheet> {
         travelDate: _travelDate,
         leadSource: 'Mobile App',
         dealPrice: widget.tour.price,
-        currency: 'USD',
+        currency: 'OMR',
       );
 
       await DealRepository().createDeal(deal);
@@ -305,8 +308,10 @@ class _TourBookingSheetState extends State<_TourBookingSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SheetHeader(
-                title: 'Book ${widget.tour.destination}',
-                subtitle: '${widget.tour.duration} · ${CurrencyFormatter.formatSmart(widget.tour.price)} per person',
+                title: context.pick('Book ${widget.tour.destination}', '${widget.tour.destination} বুকিং'),
+                subtitle: context.isBangla
+                    ? '${widget.tour.duration} · ${CurrencyFormatter.formatSmart(widget.tour.price)} (≈ ${CurrencyFormatter.convertOmrToBdt(widget.tour.price, banglaDigits: true)}) প্রতি জন'
+                    : '${widget.tour.duration} · ${CurrencyFormatter.formatSmart(widget.tour.price)} per person',
               ),
               const SizedBox(height: AppSpacing.lg),
               CustomTextField(

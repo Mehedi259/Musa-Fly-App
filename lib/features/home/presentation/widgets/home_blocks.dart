@@ -47,7 +47,7 @@ class HomeQuickPills extends StatelessWidget {
             _QuickPillItem(
               icon: PhosphorIconsDuotone.tag,
               iconColor: AppColors.secondaryDark,
-              label: 'Seasonal Discounts',
+              label: context.pick('Seasonal Discounts', 'মৌসুমি ছাড়'),
               onTap: onGiftCard,
             ),
           ],
@@ -135,7 +135,10 @@ class HomeVideoGuideSection extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           _VideoGuideCard(
-            title: 'উমরাহ প্যাকেজ বুকিং করবেন কিভাবে?',
+            title: context.pick(
+              'How to book Umrah packages?',
+              'উমরাহ প্যাকেজ বুকিং করবেন কিভাবে?',
+            ),
             ctaLabel: context.tr('home.video.cta'),
             accentColor: AppColors.catUmrah,
             isUmrah: true,
@@ -642,8 +645,11 @@ class HomeFeaturedStrip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
         children: [
           _FeaturedBanner(
-            title: 'INTRODUCING GIFT CARDS',
-            subtitle: 'Gift experiences that last a lifetime',
+            title: context.pick('INTRODUCING GIFT CARDS', 'উপহার দিন গিফট কার্ড'),
+            subtitle: context.pick(
+              'Gift experiences that last a lifetime',
+              'প্রিয়জনকে আজীবন মনে রাখার মতো ভ্রমণ অভিজ্ঞতা উপহার দিন',
+            ),
             gradient: const LinearGradient(
               colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
               begin: Alignment.topLeft,
@@ -654,8 +660,11 @@ class HomeFeaturedStrip extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           _FeaturedBanner(
-            title: 'MUSFLY VIP CONCIERGE',
-            subtitle: 'Verified 5-Star Umrah ground handlers in Makkah',
+            title: context.pick('MUSAFLY VIP CONCIERGE', 'মুসাফ্লাই ভিআইপি কনসিয়ার্জ'),
+            subtitle: context.pick(
+              'Verified 5-Star Umrah ground handlers in Makkah',
+              'মক্কা ও মদিনায় নিজস্ব টিম দ্বারা পরিচালিত ৫★ সেবা',
+            ),
             gradient: const LinearGradient(
               colors: [Color(0xFF064E3B), Color(0xFF047857)],
               begin: Alignment.topLeft,

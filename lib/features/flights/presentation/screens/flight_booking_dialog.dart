@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/utils/url_helper.dart';
@@ -74,7 +75,7 @@ class _FlightBookingDialogState extends State<FlightBookingDialog> {
         airlineName: widget.flight.airline,
         leadSource: 'Mobile App',
         dealPrice: widget.flight.price,
-        currency: 'USD',
+        currency: 'OMR',
       );
 
       await _dealRepository.createDeal(deal);
@@ -260,9 +261,11 @@ class _FlightBookingDialogState extends State<FlightBookingDialog> {
               ),
             ),
             StickyActionBar(
-              priceLabel: 'Total fare',
+              priceLabel: context.pick('Total fare', 'মোট ভাড়া'),
               priceValue: CurrencyFormatter.formatSmart(widget.flight.price),
-              priceNote: 'per traveler',
+              priceNote: context.isBangla
+                  ? '≈ ${CurrencyFormatter.convertOmrToBdt(widget.flight.price, banglaDigits: true)} · প্রতি যাত্রী'
+                  : 'per traveler',
               secondary: SoftIconButton(
                 icon: PhosphorIconsFill.whatsappLogo,
                 color: AppColors.whatsapp,
@@ -271,7 +274,9 @@ class _FlightBookingDialogState extends State<FlightBookingDialog> {
                 onTap: _whatsappDirect,
               ),
               action: PremiumButton(
-                label: _isSubmitting ? 'Sending…' : 'Confirm booking',
+                label: _isSubmitting
+                    ? context.pick('Sending…', 'পাঠানো হচ্ছে…')
+                    : context.pick('Confirm booking', 'বুকিং নিশ্চিত করুন'),
                 loading: _isSubmitting,
                 icon: PhosphorIconsBold.arrowRight,
                 trailingIcon: true,

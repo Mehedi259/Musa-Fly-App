@@ -93,7 +93,7 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
                 child: Center(
                   child: Pressable(
                     onTap: () {
-                      _toast(context, 'Added next flight segment');
+                      _toast(context, context.pick('Added next flight segment', 'পরবর্তী ফ্লাইট সেগমেন্ট যোগ করা হয়েছে'));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -114,9 +114,9 @@ class _FlightSearchCardState extends State<FlightSearchCard> {
                             child: const Icon(PhosphorIconsBold.plus, color: Colors.white, size: 10),
                           ),
                           const SizedBox(width: 8),
-                          const Text(
-                            'ADD CITY',
-                            style: TextStyle(
+                          Text(
+                            context.pick('ADD CITY', 'শহর যোগ করুন'),
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w800,
                               color: AppColors.primary,

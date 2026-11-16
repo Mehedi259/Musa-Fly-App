@@ -30,7 +30,7 @@ const Map<String, String> flightsEn = <String, String>{
   // ── Hot deals ──
   'flights.hotDeals': 'Hot Deals',
   'flights.dealBadge': 'Limited time',
-  'flights.dealTitle': 'Dhaka to Dubai from \$349',
+  'flights.dealTitle': 'Dhaka to Dubai from OMR 125',
   'flights.dealBody': 'Return fares on selected airlines, booked through our desk.',
 
   // ── Airport selector ──
@@ -54,7 +54,7 @@ const Map<String, String> flightsEn = <String, String>{
   'flights.sortFastest': 'Fastest',
   'flights.sortEarliest': 'Earliest',
   'flights.filterAll': 'All',
-  'flights.filterCheap': 'Under \$500',
+  'flights.filterCheap': 'Under OMR 150',
   'flights.filterDirect': 'Direct',
   'flights.filterMorning': 'Morning',
   'flights.filterEvening': 'Evening',
@@ -117,7 +117,7 @@ const Map<String, String> flightsBn = <String, String>{
   // ── Hot deals ──
   'flights.hotDeals': 'সেরা অফার',
   'flights.dealBadge': 'সীমিত সময়',
-  'flights.dealTitle': 'ঢাকা থেকে দুবাই \$349 থেকে',
+  'flights.dealTitle': 'ঢাকা থেকে দুবাই OMR ১২৫ থেকে',
   'flights.dealBody': 'নির্বাচিত এয়ারলাইনে ফেরার টিকিটসহ ভাড়া, আমাদের ডেস্কের মাধ্যমে।',
 
   // ── Airport selector ──
@@ -140,7 +140,7 @@ const Map<String, String> flightsBn = <String, String>{
   'flights.sortFastest': 'দ্রুততম',
   'flights.sortEarliest': 'আগে ছাড়ে',
   'flights.filterAll': 'সব',
-  'flights.filterCheap': '\$500-এর নিচে',
+  'flights.filterCheap': 'OMR ১৫০-এর নিচে',
   'flights.filterDirect': 'সরাসরি',
   'flights.filterMorning': 'সকাল',
   'flights.filterEvening': 'বিকেল',

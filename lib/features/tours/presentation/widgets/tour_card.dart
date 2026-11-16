@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
@@ -69,9 +70,12 @@ class TourCard extends StatelessWidget {
               ),
             ),
             CardPriceFooter(
-              label: 'Starting at',
+              label: context.pick('Starting at', 'শুরু হচ্ছে'),
               price: CurrencyFormatter.formatSmart(tour.price),
-              ctaLabel: 'View',
+              note: context.isBangla
+                  ? '≈ ${CurrencyFormatter.convertOmrToBdt(tour.price, banglaDigits: true)}'
+                  : null,
+              ctaLabel: context.pick('View', 'দেখুন'),
               padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
             ),
           ],
@@ -150,9 +154,12 @@ class TourCard extends StatelessWidget {
             ),
           ),
           CardPriceFooter(
-            label: 'Starting at / person',
+            label: context.pick('Starting at / person', 'শুরু হচ্ছে / প্রতি জন'),
             price: CurrencyFormatter.formatSmart(tour.price),
-            ctaLabel: 'View details',
+            note: context.isBangla
+                ? '≈ ${CurrencyFormatter.convertOmrToBdt(tour.price, banglaDigits: true)}'
+                : null,
+            ctaLabel: context.pick('View details', 'বিস্তারিত দেখুন'),
           ),
         ],
       ),

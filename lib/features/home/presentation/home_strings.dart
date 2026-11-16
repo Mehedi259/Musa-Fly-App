@@ -75,7 +75,7 @@ const Map<String, String> homeEn = <String, String>{
 
 const Map<String, String> homeBn = <String, String>{
   // ── Hero ──
-  'home.hello': 'হ্যালো, ভ্রমণপিপাসু',
+  'home.hello': 'হ্যালো, ট্রাভেলার',
   'home.helloBack': 'আবার স্বাগতম',
   'home.heroTagline': 'এবার কোথায় যাচ্ছেন?',
   'home.menu': 'মেনু',

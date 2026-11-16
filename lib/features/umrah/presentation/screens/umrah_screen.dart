@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
 import '../../../tours/presentation/widgets/travel_ui.dart';
@@ -43,13 +44,22 @@ class _UmrahScreenState extends State<UmrahScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: ListHero(
-                eyebrow: 'Blessed journey',
-                title: 'Umrah packages,\narranged with care',
-                subtitle:
-                    'Saudi e-Visa, direct flights, hotels within walking distance of the Haram and guided Ziyarah.',
+                eyebrow: context.pick('Blessed journey', 'পবিত্র যাত্রা'),
+                title: context.pick(
+                  'Umrah packages,\narranged with care',
+                  'উমরাহ প্যাকেজ,\nবিশেষ যত্নে পরিকল্পিত',
+                ),
+                subtitle: context.pick(
+                  'Saudi e-Visa, direct flights, hotels within walking distance of the Haram and guided Ziyarah.',
+                  'সৌদি ই-ভিসা, সরাসরি ফ্লাইট, হারামাইন শরিফাইনের কাছে হোটেল ও গাইডেড জিয়ারত।',
+                ),
                 icon: PhosphorIconsFill.mosque,
                 onRefresh: () => provider.fetchPackages(),
-                highlights: const ['Visa included', 'Licensed operator', 'Group & family'],
+                highlights: [
+                  context.pick('Visa included', 'ভিসা অন্তর্ভুক্ত'),
+                  context.pick('Licensed operator', 'অনুমোদিত অপারেটর'),
+                  context.pick('Group & family', 'গ্রুপ ও ফ্যামিলি'),
+                ],
               ),
             ),
             SliverPadding(

@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/url_helper.dart';
 import '../../../../core/widgets/custom_text_field.dart';
@@ -179,9 +180,11 @@ class _VisaDetailScreenState extends State<VisaDetailScreen> {
         ],
       ),
       bottomNavigationBar: StickyActionBar(
-        priceLabel: 'Total visa fee',
+        priceLabel: context.pick('Total visa fee', 'মোট ভিসা ফি'),
         priceValue: price,
-        priceNote: 'per applicant',
+        priceNote: context.isBangla
+            ? '≈ ${CurrencyFormatter.convertOmrToBdt(visa.price, banglaDigits: true)} · প্রতি আবেদনকারী'
+            : 'per applicant',
         secondary: SoftIconButton(
           icon: PhosphorIconsFill.whatsappLogo,
           color: AppColors.whatsapp,
@@ -251,7 +254,7 @@ class _VisaApplicationSheetState extends State<_VisaApplicationSheet> {
         travelDate: DateTime.now().add(const Duration(days: 15)),
         leadSource: 'Mobile App',
         dealPrice: widget.visa.price,
-        currency: 'USD',
+        currency: 'OMR',
       );
 
       await DealRepository().createDeal(deal);
@@ -305,9 +308,10 @@ class _VisaApplicationSheetState extends State<_VisaApplicationSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SheetHeader(
-                title: 'Apply for ${widget.visa.country} visa',
-                subtitle:
-                    '${widget.visa.visaType} · ${CurrencyFormatter.formatSmart(widget.visa.price)}',
+                title: context.pick('Apply for ${widget.visa.country} visa', '${widget.visa.country} ভিসা আবেদন'),
+                subtitle: context.isBangla
+                    ? '${widget.visa.visaType} · ${CurrencyFormatter.formatSmart(widget.visa.price)} (≈ ${CurrencyFormatter.convertOmrToBdt(widget.visa.price, banglaDigits: true)})'
+                    : '${widget.visa.visaType} · ${CurrencyFormatter.formatSmart(widget.visa.price)}',
               ),
               const SizedBox(height: AppSpacing.lg),
               CustomTextField(

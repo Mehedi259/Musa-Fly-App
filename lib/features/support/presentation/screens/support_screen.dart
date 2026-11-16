@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/url_helper.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
@@ -23,14 +24,6 @@ class SupportScreen extends StatefulWidget {
 
 class _SupportScreenState extends State<SupportScreen> {
   int? _expandedFaqId;
-
-  static const List<(String, String)> _filters = [
-    ('all', 'All'),
-    ('flights', 'Flights'),
-    ('tours', 'Tours'),
-    ('visa', 'Visa'),
-    ('general', 'General'),
-  ];
 
   @override
   void initState() {
@@ -53,6 +46,14 @@ class _SupportScreenState extends State<SupportScreen> {
         .toList();
     final loadingFaqs = provider.isLoading && provider.faqs.isEmpty;
 
+    final filters = [
+      ('all', context.pick('All', 'সব')),
+      ('flights', context.pick('Flights', 'ফ্লাইট')),
+      ('tours', context.pick('Tours', 'ট্যুর')),
+      ('visa', context.pick('Visa', 'ভিসা')),
+      ('general', context.pick('General', 'সাধারণ')),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: RefreshIndicator(
@@ -74,19 +75,22 @@ class _SupportScreenState extends State<SupportScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.xxl),
-              const SectionHeader(
-                title: 'Frequently asked',
-                subtitle: 'Bookings, visas, refunds and cancellations',
+              SectionHeader(
+                title: context.pick('Frequently asked', 'সাধারণ প্রশ্নোত্তর'),
+                subtitle: context.pick(
+                  'Bookings, visas, refunds and cancellations',
+                  'বুকিং, ভিসা, রিফান্ড ও বাতিল সংক্রান্ত তথ্য',
+                ),
               ),
               SizedBox(
                 height: 40,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-                  itemCount: _filters.length,
+                  itemCount: filters.length,
                   separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
                   itemBuilder: (_, i) {
-                    final (value, label) = _filters[i];
+                    final (value, label) = filters[i];
                     return _FilterChip(
                       label: label,
                       selected: provider.selectedCategory == value,
@@ -217,27 +221,30 @@ class _SupportHero extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Need a hand?',
+                          context.pick('Need a hand?', 'আমরা আপনার সেবায় নিয়োজিত'),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 21,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
-                          'A real travel concierge, around the clock',
+                          context.pick(
+                            'A real travel concierge, around the clock',
+                            'সার্বক্ষণিক বিশ্বস্ত ট্রাভেল কনসিয়ার্জ সেবা',
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(fontSize: 12.5, color: Colors.white70),
+                          style: const TextStyle(fontSize: 12.5, color: Colors.white70),
                         ),
                       ],
                     ),
@@ -249,7 +256,7 @@ class _SupportHero extends StatelessWidget {
                 children: [
                   Expanded(
                     child: PremiumButton(
-                      label: 'WhatsApp',
+                      label: context.pick('WhatsApp', 'হোয়াটসঅ্যাপ'),
                       icon: PhosphorIconsFill.whatsappLogo,
                       height: 50,
                       style: PremiumButtonStyle.whatsapp,
@@ -259,7 +266,7 @@ class _SupportHero extends StatelessWidget {
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: PremiumButton(
-                      label: 'Call us',
+                      label: context.pick('Call us', 'ফোন করুন'),
                       icon: PhosphorIconsFill.phoneCall,
                       height: 50,
                       onPressed: () => UrlHelper.makePhoneCall(AppStrings.phone),
@@ -276,12 +283,15 @@ class _SupportHero extends StatelessWidget {
                     color: AppColors.secondaryLight,
                   ),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Average reply in under 5 minutes · English, Arabic & Bangla',
+                      context.pick(
+                        'Average reply in under 5 minutes · English, Arabic & Bangla',
+                        'গড়ে ৫ মিনিটের মধ্যে উত্তর · বাংলা, ইংরেজি ও আরবি',
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11.5, color: Colors.white70, height: 1.35),
+                      style: const TextStyle(fontSize: 11.5, color: Colors.white70, height: 1.35),
                     ),
                   ),
                 ],
@@ -307,14 +317,14 @@ class _ContactCard extends StatelessWidget {
         children: [
           _ContactRow(
             icon: PhosphorIconsFill.mapPin,
-            title: 'Main office',
+            title: context.pick('Main office', 'প্রধান কার্যালয়'),
             subtitle: AppStrings.address,
             onTap: () => UrlHelper.openWeb(AppStrings.websiteUrl),
           ),
           const Divider(height: 1, color: AppColors.divider),
           _ContactRow(
             icon: PhosphorIconsFill.envelopeSimple,
-            title: 'Email the desk',
+            title: context.pick('Email the desk', 'ইমেইল করুন'),
             subtitle: AppStrings.email,
             onTap: () => UrlHelper.sendEmail(AppStrings.email),
           ),

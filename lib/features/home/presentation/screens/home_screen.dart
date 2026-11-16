@@ -343,22 +343,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final deals = <DealOfferItem>[
       DealOfferItem(
-        discountBadge: 'Flat 5%\nDiscount*',
-        title: 'On Int\'l Flight & Hotel Bookings for Mobile Banking Payment',
+        discountBadge: context.pick('Flat 5%\nDiscount*', 'ফ্ল্যাট ৫%\nডিসকাউন্ট*'),
+        title: context.pick(
+          'On Int\'l Flight & Hotel Bookings for Mobile Banking Payment',
+          'মোবাইল ব্যাংকিং পেমেন্টে আন্তর্জাতিক ফ্লাইট ও হোটেল বুকিংয়ে বিশেষ ছাড়',
+        ),
         icon: PhosphorIconsFill.deviceMobile,
         badgeColor: const Color(0xFF0F172A),
         onTap: _openFlights,
       ),
       DealOfferItem(
-        discountBadge: 'Up to 8%\nDiscount*',
-        title: 'On Domestic & International Flight Bookings via MusaFly',
+        discountBadge: context.pick('Up to 8%\nDiscount*', '৮% পর্যন্ত\nডিসকাউন্ট*'),
+        title: context.pick(
+          'On Domestic & International Flight Bookings via MusaFly',
+          'মুসাফ্লাইয়ের মাধ্যমে দেশি ও আন্তর্জাতিক ফ্লাইট বুকিংয়ে বিশেষ অফার',
+        ),
         icon: PhosphorIconsFill.airplaneTilt,
         badgeColor: const Color(0xFF1E3A8A),
         onTap: _openFlights,
       ),
       DealOfferItem(
-        discountBadge: 'Special\n10% Off',
-        title: 'Exclusive VIP Ramadan & Shawwal 5★ Umrah Packages',
+        discountBadge: context.pick('Special\n10% Off', 'বিশেষ\n১০% ছাড়'),
+        title: context.pick(
+          'Exclusive VIP Ramadan & Shawwal 5★ Umrah Packages',
+          'রমজান ও শাওয়ালের এক্সক্লুসিভ ৫★ ভিআইপি উমরাহ প্যাকেজ',
+        ),
         icon: PhosphorIconsFill.mosque,
         badgeColor: const Color(0xFF064E3B),
         onTap: _openUmrah,
@@ -388,29 +397,52 @@ class _HomeScreenState extends State<HomeScreen> {
   // ───────────────────────── Special offers ─────────────────────────
 
   Widget _specialOffersSection(TourProvider toursProvider) {
-    final chips = ['All', 'HOTEL', 'FLIGHT', 'UMRAH'];
+    final chips = [
+      context.pick('All', 'সব'),
+      context.pick('HOTEL', 'হোটেল'),
+      context.pick('FLIGHT', 'ফ্লাইট'),
+      context.pick('UMRAH', 'উমরাহ'),
+    ];
     final tours = toursProvider.tours;
 
     final offers = <SpecialOfferItem>[
       SpecialOfferItem(
-        title: 'Hotel Vista Bay, Cox\'s Bazar – Extended Stay Offer: BDT 1,660 Per Night',
-        subtitle: 'Without VAT & Service Charges · Instant Confirmation',
+        title: context.pick(
+          'Hotel Vista Bay, Cox\'s Bazar – Extended Stay Offer: OMR 15 Per Night',
+          'হোটেল ভিস্টা বে, কক্সবাজার – বর্ধিত থাকার অফার: প্রতি রাত OMR ১৫ (≈ ৳৪,৭২৫)',
+        ),
+        subtitle: context.pick(
+          'Without VAT & Service Charges · Instant Confirmation',
+          'ভ্যাট ও সার্ভিস চার্জ ছাড়া · তাৎক্ষণিক কনফার্মেশন',
+        ),
         imageUrl: tours.isNotEmpty ? tours.first.displayImage : 'https://images.unsplash.com/photo-1571896349842-33c89424de2d',
-        badge: 'HOTEL OFFER',
+        badge: context.pick('HOTEL OFFER', 'হোটেল অফার'),
         onTap: _openTours,
       ),
       SpecialOfferItem(
-        title: 'Get Up to 22% Off on Selected European Flight Routes',
-        subtitle: 'Direct & 1-Stop Flights via Top Carriers',
+        title: context.pick(
+          'Get Up to 22% Off on Selected European Flight Routes',
+          'নির্বাচিত ইউরোপীয় ফ্লাইট রুটে ২২% পর্যন্ত ছাড়',
+        ),
+        subtitle: context.pick(
+          'Direct & 1-Stop Flights via Top Carriers',
+          'সেরা এয়ারলাইন্সে সরাসরি ও ১-স্টপ ফ্লাইট',
+        ),
         imageUrl: tours.length > 1 ? tours[1].displayImage : 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05',
-        badge: 'FLIGHT DEAL',
+        badge: context.pick('FLIGHT DEAL', 'ফ্লাইট ডিল'),
         onTap: _openFlights,
       ),
       SpecialOfferItem(
-        title: 'Makkah Clock Tower 5★ Executive Package – BDT 135,000',
-        subtitle: 'Haram Front View · VIP Transport & Visa Included',
+        title: context.pick(
+          'Makkah Clock Tower 5★ Executive Package – OMR 430',
+          'মক্কা ক্লক টাওয়ার ৫★ এক্সিকিউটিভ প্যাকেজ – OMR ৪৩০ (≈ ৳১,৩৫,৪৫০)',
+        ),
+        subtitle: context.pick(
+          'Haram Front View · VIP Transport & Visa Included',
+          'হারাম ফ্রন্ট ভিউ · ভিআইপি ট্রান্সপোর্ট ও ভিসা সহ',
+        ),
         imageUrl: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa',
-        badge: 'UMRAH SPECIAL',
+        badge: context.pick('UMRAH SPECIAL', 'উমরাহ স্পেশাল'),
         onTap: _openUmrah,
       ),
     ];

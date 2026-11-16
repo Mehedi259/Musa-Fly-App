@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/utils/date_formatter.dart';
 import '../../../../core/widgets/motion.dart';
@@ -53,10 +54,10 @@ class FlightCard extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
-              _header(),
+              _header(context),
               _route(duration),
               _tearLine(),
-              _fareRow(),
+              _fareRow(context),
             ],
           ),
         ),
@@ -66,7 +67,7 @@ class FlightCard extends StatelessWidget {
 
   // ───────────────────────── Stub header ─────────────────────────
 
-  Widget _header() {
+  Widget _header(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 10),
       child: Row(
@@ -142,8 +143,8 @@ class FlightCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const ToneChip(
-            label: 'Available',
+          ToneChip(
+            label: context.pick('Available', 'উপলব্ধ'),
             icon: PhosphorIconsFill.sealCheck,
             tone: ChipTone.success,
             dense: true,
@@ -207,7 +208,7 @@ class FlightCard extends StatelessWidget {
 
   // ───────────────────────── Fare row ─────────────────────────
 
-  Widget _fareRow() {
+  Widget _fareRow(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
       child: Row(
@@ -232,8 +233,8 @@ class FlightCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  flight.price < 3000
-                      ? '≈ ${CurrencyFormatter.convertUsdToBdt(flight.price)} · per traveler'
+                  context.isBangla
+                      ? '≈ ${CurrencyFormatter.convertOmrToBdt(flight.price, banglaDigits: true)} · প্রতি যাত্রী'
                       : 'per traveler',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -259,9 +260,9 @@ class FlightCard extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'Book Now',
-                    style: TextStyle(
+                  Text(
+                    context.pick('Book Now', 'বুক করুন'),
+                    style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 13.5,
                       color: AppColors.primaryDark,

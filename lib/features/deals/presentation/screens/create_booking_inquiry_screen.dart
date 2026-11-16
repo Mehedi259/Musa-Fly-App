@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
 import '../../data/models/deal_model.dart';
@@ -84,7 +85,7 @@ class _CreateBookingInquiryScreenState extends State<CreateBookingInquiryScreen>
         airlineName: _airlineController.text.trim(),
         leadSource: 'Mobile App Form',
         dealPrice: price,
-        currency: 'USD',
+        currency: 'OMR',
       );
 
       await DealRepository().createDeal(deal);
@@ -282,18 +283,18 @@ class _CreateBookingInquiryScreenState extends State<CreateBookingInquiryScreen>
                     textCapitalization: TextCapitalization.words,
                   ),
                   PremiumField(
-                    label: 'Estimated budget (USD)',
+                    label: context.pick('Estimated budget (OMR)', 'আনুমানিক বাজেট (OMR)'),
                     controller: _priceController,
-                    icon: PhosphorIconsRegular.currencyDollar,
-                    hint: 'e.g. 450',
+                    icon: PhosphorIconsRegular.coins,
+                    hint: 'e.g. 150',
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     textInputAction: TextInputAction.done,
                     validator: (v) {
                       final value = v?.trim() ?? '';
                       if (value.isEmpty) return null;
                       final parsed = double.tryParse(value);
-                      if (parsed == null) return 'Enter a number, e.g. 450';
-                      if (parsed <= 0) return 'Budget must be greater than zero';
+                      if (parsed == null) return context.pick('Enter a number, e.g. 150', 'একটি সংখ্যা দিন, যেমন ১৫০');
+                      if (parsed <= 0) return context.pick('Budget must be greater than zero', 'বাজেট শূন্যের বেশি হতে হবে');
                       return null;
                     },
                   ),

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../tours/presentation/widgets/travel_ui.dart';
 import '../../data/models/visa_model.dart';
@@ -53,12 +54,17 @@ class _VisaScreenState extends State<VisaScreen> {
           slivers: [
             SliverToBoxAdapter(
               child: ListHero(
-                eyebrow: 'Visa services',
-                title: 'Visas handled\nfrom form to stamp',
-                subtitle:
-                    'Document checks, embassy submission and status updates — handled by our consultants.',
+                eyebrow: context.pick('Visa services', 'ভিসা সেবা'),
+                title: context.pick(
+                  'Visas handled\nfrom form to stamp',
+                  'আবেদন থেকে স্ট্যাম্প,\nসহজ ভিসা প্রসেসিং',
+                ),
+                subtitle: context.pick(
+                  'Document checks, embassy submission and status updates — handled by our consultants.',
+                  'ডকুমেন্ট যাচাই, এম্বাসি সাবমিশন ও নিয়মিত আপডেট — দক্ষ ভিসা কনসালটেন্টদের দ্বারা পরিচালিত।',
+                ),
                 icon: PhosphorIconsFill.identificationCard,
-                searchHint: 'Search Malaysia, Oman, Singapore…',
+                searchHint: context.pick('Search Malaysia, Oman, Singapore…', 'মালয়েশিয়া, ওমান, সিঙ্গাপুর বা দেশ খুঁজুন…'),
                 onSearchChanged: (val) => setState(() => _searchQuery = val),
                 onRefresh: () => provider.fetchVisas(),
               ),

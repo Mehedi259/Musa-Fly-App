@@ -4,6 +4,7 @@ import 'package:musa_fly_app/core/constants/app_icons.dart';
 import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
+import '../../../../core/l10n/app_text.dart';
 import '../../../../core/utils/currency_formatter.dart';
 import '../../../../core/widgets/motion.dart';
 import '../../../../core/widgets/premium.dart';
@@ -82,9 +83,12 @@ class VisaCard extends StatelessWidget {
             ),
           ),
           CardPriceFooter(
-            label: 'Total visa fee',
+            label: context.pick('Total visa fee', 'মোট ভিসা ফি'),
             price: CurrencyFormatter.formatSmart(visa.price),
-            ctaLabel: 'Apply now',
+            note: context.isBangla
+                ? '≈ ${CurrencyFormatter.convertOmrToBdt(visa.price, banglaDigits: true)}'
+                : null,
+            ctaLabel: context.pick('Apply now', 'আবেদন করুন'),
           ),
         ],
       ),

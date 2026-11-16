@@ -60,7 +60,7 @@ class _FlightResultsScreenState extends State<FlightResultsScreen> {
     final list = source.where((f) {
       switch (_filter) {
         case _FlightFilter.cheap:
-          return f.price < 500;
+          return f.price < 150;
         case _FlightFilter.morning:
           return f.departureTime.hour < 12;
         case _FlightFilter.evening:

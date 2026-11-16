@@ -115,9 +115,9 @@ class ProfileScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(AppRadius.xs),
                                 border: Border.all(color: AppColors.secondaryLight),
                               ),
-                              child: const Text(
-                                'MusaFly VIP Member',
-                                style: TextStyle(
+                              child: Text(
+                                context.pick('MusaFly VIP Member', 'মুসাফ্লাই ভিআইপি মেম্বার'),
+                                style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.secondaryDark,
@@ -145,19 +145,22 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      const Text(
-                        'Welcome to MusaFly',
-                        style: TextStyle(
+                      Text(
+                        context.pick('Welcome to MusaFly', 'মুসাফ্লাইয়ে স্বাগতম'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Sign in to manage your bookings and access member discounts.',
+                      Text(
+                        context.pick(
+                          'Sign in to manage your bookings and access member discounts.',
+                          'আপনার বুকিং দেখতে ও মেম্বার ডিসকাউন্ট পেতে সাইন ইন করুন।',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
                           height: 1.3,
@@ -188,18 +191,24 @@ class ProfileScreen extends StatelessWidget {
 
           // ── Menu Section ──
           _MenuSection(
-            title: 'TRAVEL & BOOKINGS',
+            title: context.pick('TRAVEL & BOOKINGS', 'ভ্রমণ ও বুকিংস'),
             items: [
               _MenuItem(
                 icon: PhosphorIconsDuotone.suitcaseSimple,
                 title: context.tr('nav.trips'),
-                subtitle: 'View your flight and Umrah tickets',
+                subtitle: context.pick(
+                  'View your flight and Umrah tickets',
+                  'আপনার ফ্লাইট ও উমরাহ টিকিট দেখুন',
+                ),
                 onTap: () => context.pushPremium(const DealsScreen()),
               ),
               _MenuItem(
                 icon: PhosphorIconsDuotone.bellRinging,
                 title: context.tr('nav.inbox'),
-                subtitle: 'Promotions, flight updates & alerts',
+                subtitle: context.pick(
+                  'Promotions, flight updates & alerts',
+                  'অফার, ফ্লাইট আপডেট ও নোটিফিকেশন',
+                ),
                 onTap: () => context.pushPremium(
                   NotificationsScreen(onNavigateTab: (_) {}),
                 ),
@@ -209,11 +218,11 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
 
           _MenuSection(
-            title: 'PREFERENCES',
+            title: context.pick('PREFERENCES', 'পছন্দসমূহ'),
             items: [
               _MenuItem(
                 icon: PhosphorIconsDuotone.translate,
-                title: 'Language / ভাষা',
+                title: context.pick('Language / ভাষা', 'ভাষা / Language'),
                 subtitle: locale.isBangla ? 'বাংলা (Bangla)' : 'English',
                 trailing: Text(
                   locale.isBangla ? 'বাংলা' : 'EN',
@@ -230,19 +239,25 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: AppSpacing.lg),
 
           _MenuSection(
-            title: 'SUPPORT & VIP CARE',
+            title: context.pick('SUPPORT & VIP CARE', 'সহায়তা ও ভিআইপি সেবা'),
             items: [
               _MenuItem(
                 icon: PhosphorIconsDuotone.whatsappLogo,
-                title: 'WhatsApp Concierge',
-                subtitle: 'Direct 24/7 chat with travel expert',
+                title: context.pick('WhatsApp Concierge', 'হোয়াটসঅ্যাপ কনসিয়ার্জ'),
+                subtitle: context.pick(
+                  'Direct 24/7 chat with travel expert',
+                  'ট্রাভেল বিশেষজ্ঞের সঙ্গে সার্বক্ষণিক চ্যাট',
+                ),
                 tint: AppColors.whatsapp,
                 onTap: () => UrlHelper.launchWhatsApp(),
               ),
               _MenuItem(
                 icon: PhosphorIconsDuotone.headset,
-                title: 'Help Centre & FAQs',
-                subtitle: 'Instant answers to booking queries',
+                title: context.pick('Help Centre & FAQs', 'হেল্প সেন্টার ও সাধারণ প্রশ্নোত্তর'),
+                subtitle: context.pick(
+                  'Instant answers to booking queries',
+                  'বুকিং সংক্রান্ত প্রশ্নের দ্রুত উত্তর',
+                ),
                 onTap: () => context.pushPremium(const SupportScreen()),
               ),
             ],
@@ -281,11 +296,14 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
           ],
 
-          const Center(
+          Center(
             child: Text(
-              'MusaFly App v1.0.1+2\nOfficial Airline & Umrah Partner',
+              context.pick(
+                'MusaFly App v1.0.1+2\nOfficial Airline & Umrah Partner',
+                'মুসাফ্লাই অ্যাপ v1.0.1+2\nঅনুমোদিত এয়ারলাইন ও উমরাহ পার্টনার',
+              ),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 11,
                 color: AppColors.textMuted,
                 height: 1.4,
