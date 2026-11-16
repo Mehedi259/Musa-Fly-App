@@ -36,14 +36,34 @@ String translate(String key, AppLanguage language) {
 
 extension AppTextX on BuildContext {
   /// `context.tr('home.greeting')`
-  String tr(String key) => translate(key, watch<LocaleProvider>().language);
+  String tr(String key) {
+    try {
+      return translate(key, watch<LocaleProvider>().language);
+    } catch (_) {
+      return translate(key, read<LocaleProvider>().language);
+    }
+  }
 
   /// Reads the language without subscribing — for callbacks and one-off reads.
   String trOnce(String key) => translate(key, read<LocaleProvider>().language);
 
   /// Picks between two literals when a string is too local to deserve a key.
-  String pick(String english, String bangla) =>
-      watch<LocaleProvider>().isBangla ? bangla : english;
+  String pick(String english, String bangla) {
+    try {
+      return watch<LocaleProvider>().isBangla ? bangla : english;
+    } catch (_) {
+      return read<LocaleProvider>().isBangla ? bangla : english;
+    }
+  }
 
-  bool get isBangla => watch<LocaleProvider>().isBangla;
+  String pickOnce(String english, String bangla) =>
+      read<LocaleProvider>().isBangla ? bangla : english;
+
+  bool get isBangla {
+    try {
+      return watch<LocaleProvider>().isBangla;
+    } catch (_) {
+      return read<LocaleProvider>().isBangla;
+    }
+  }
 }

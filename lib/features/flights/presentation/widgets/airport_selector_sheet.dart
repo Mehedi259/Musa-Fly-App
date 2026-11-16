@@ -317,6 +317,44 @@ class _AirportSelectorSheetState extends State<AirportSelectorSheet> {
                 ),
               ),
             ),
+            SizedBox(
+              height: 38,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+                physics: const BouncingScrollPhysics(),
+                children: [
+                  for (final code in ['DAC', 'DXB', 'MCT', 'JED', 'CGP', 'ZYL', 'DOH', 'LHR'])
+                    Builder(
+                      builder: (ctx) {
+                        final a = AirportSelectorSheet.airports.firstWhere(
+                          (el) => el.code == code,
+                          orElse: () => AirportSelectorSheet.airports.first,
+                        );
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ActionChip(
+                            label: Text(
+                              '${a.city} (${a.code})',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                            backgroundColor: AppColors.primarySubtle.withValues(alpha: 0.6),
+                            side: BorderSide(color: AppColors.primary.withValues(alpha: 0.15)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            onPressed: () => _pick(a),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6),
             Expanded(
               child: entries.isEmpty
                   ? _emptyState()

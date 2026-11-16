@@ -379,7 +379,6 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         SectionHeader(
           title: context.tr('home.hotDeals.title'),
-          subtitle: context.tr('home.hotDeals.subtitle'),
           actionText: context.tr('action.viewAll'),
           onAction: _openFlights,
         ),
@@ -411,10 +410,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Hotel Vista Bay, Cox\'s Bazar – Extended Stay Offer: OMR 15 Per Night',
           'হোটেল ভিস্টা বে, কক্সবাজার – বর্ধিত থাকার অফার: প্রতি রাত OMR ১৫ (≈ ৳৪,৭২৫)',
         ),
-        subtitle: context.pick(
-          'Without VAT & Service Charges · Instant Confirmation',
-          'ভ্যাট ও সার্ভিস চার্জ ছাড়া · তাৎক্ষণিক কনফার্মেশন',
-        ),
         imageUrl: tours.isNotEmpty ? tours.first.displayImage : 'https://images.unsplash.com/photo-1571896349842-33c89424de2d',
         badge: context.pick('HOTEL OFFER', 'হোটেল অফার'),
         onTap: _openTours,
@@ -424,10 +419,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Get Up to 22% Off on Selected European Flight Routes',
           'নির্বাচিত ইউরোপীয় ফ্লাইট রুটে ২২% পর্যন্ত ছাড়',
         ),
-        subtitle: context.pick(
-          'Direct & 1-Stop Flights via Top Carriers',
-          'সেরা এয়ারলাইন্সে সরাসরি ও ১-স্টপ ফ্লাইট',
-        ),
         imageUrl: tours.length > 1 ? tours[1].displayImage : 'https://images.unsplash.com/photo-1436491865332-7a61a109cc05',
         badge: context.pick('FLIGHT DEAL', 'ফ্লাইট ডিল'),
         onTap: _openFlights,
@@ -436,10 +427,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: context.pick(
           'Makkah Clock Tower 5★ Executive Package – OMR 430',
           'মক্কা ক্লক টাওয়ার ৫★ এক্সিকিউটিভ প্যাকেজ – OMR ৪৩০ (≈ ৳১,৩৫,৪৫০)',
-        ),
-        subtitle: context.pick(
-          'Haram Front View · VIP Transport & Visa Included',
-          'হারাম ফ্রন্ট ভিউ · ভিআইপি ট্রান্সপোর্ট ও ভিসা সহ',
         ),
         imageUrl: 'https://images.unsplash.com/photo-1591604129939-f1efa4d9f7fa',
         badge: context.pick('UMRAH SPECIAL', 'উমরাহ স্পেশাল'),
@@ -452,7 +439,6 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         SectionHeader(
           title: context.tr('home.offers.title'),
-          subtitle: context.tr('home.offers.subtitle'),
           actionText: context.tr('action.explore'),
           onAction: _openTours,
         ),
@@ -475,7 +461,6 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         SectionHeader(
           title: context.tr('home.featured.title'),
-          subtitle: context.tr('home.featured.subtitle'),
         ),
         HomeFeaturedStrip(
           onGiftCards: _openNotifications,

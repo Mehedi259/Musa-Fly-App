@@ -1,402 +1,345 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:musa_fly_app/core/constants/app_icons.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_design.dart';
 import '../../../../core/l10n/app_text.dart';
-import '../../../../core/widgets/booking_ui.dart';
-import '../../../../core/widgets/empty_state_view.dart';
-import '../../../../core/widgets/error_state_view.dart';
-import '../../../../core/widgets/motion.dart';
-import '../../../../core/widgets/shimmer_loader.dart';
-import '../../data/models/flight_model.dart';
+import '../../../../core/utils/currency_formatter.dart';
+import '../../../../core/utils/url_helper.dart';
 import '../providers/flight_provider.dart';
-import '../widgets/flight_card.dart';
 import '../widgets/flight_header.dart';
-import 'flight_booking_dialog.dart';
 
-enum _FlightSort { recommended, cheapest, fastest, earliest }
-
-enum _FlightFilter { all, cheap, direct, morning, evening }
-
-/// The fare list. White page, a rail of filters, and one clean ticket per
-/// flight — nothing competes with the fares themselves.
-class FlightResultsScreen extends StatefulWidget {
+/// Minimal, clean flight booking confirmation screen.
+/// Displays ONLY a compact itinerary card of the user's selected search
+/// and a prominent direct WhatsApp booking button.
+class FlightResultsScreen extends StatelessWidget {
   const FlightResultsScreen({super.key});
 
-  @override
-  State<FlightResultsScreen> createState() => _FlightResultsScreenState();
-}
+  double _calculateEstimatedOmr(FlightProvider provider) {
+    final isRound = provider.tripType == FlightSearchTripType.roundTrip;
+    final isDomestic = ['DAC', 'CGP', 'CXB', 'ZYL'].contains(provider.originCode) &&
+        ['DAC', 'CGP', 'CXB', 'ZYL'].contains(provider.destCode);
 
-class _FlightResultsScreenState extends State<FlightResultsScreen> {
-  _FlightFilter _filter = _FlightFilter.all;
-  _FlightSort _sort = _FlightSort.recommended;
+    double baseOmrPerAdult = isDomestic ? 28.0 : 115.0;
+    if (isRound) baseOmrPerAdult *= 1.85;
 
-  static const _filterKeys = <_FlightFilter, String>{
-    _FlightFilter.all: 'flights.filterAll',
-    _FlightFilter.cheap: 'flights.filterCheap',
-    _FlightFilter.direct: 'flights.filterDirect',
-    _FlightFilter.morning: 'flights.filterMorning',
-    _FlightFilter.evening: 'flights.filterEvening',
-  };
+    final adultsFare = provider.adults * baseOmrPerAdult;
+    final childrenFare = provider.children * (baseOmrPerAdult * 0.75);
+    final infantsFare = provider.infants * (baseOmrPerAdult * 0.20);
 
-  static const _sortKeys = <_FlightSort, String>{
-    _FlightSort.recommended: 'flights.sortRecommended',
-    _FlightSort.cheapest: 'flights.sortCheapest',
-    _FlightSort.fastest: 'flights.sortFastest',
-    _FlightSort.earliest: 'flights.sortEarliest',
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = context.read<FlightProvider>();
-      if (provider.flights.isEmpty) provider.fetchFlights();
-    });
+    return adultsFare + childrenFare + infantsFare;
   }
 
-  List<FlightModel> _applyFilters(List<FlightModel> source) {
-    final list = source.where((f) {
-      switch (_filter) {
-        case _FlightFilter.cheap:
-          return f.price < 150;
-        case _FlightFilter.morning:
-          return f.departureTime.hour < 12;
-        case _FlightFilter.evening:
-          return f.departureTime.hour >= 12;
-        case _FlightFilter.direct:
-        case _FlightFilter.all:
-          return true;
-      }
-    }).toList();
-
-    switch (_sort) {
-      case _FlightSort.cheapest:
-        list.sort((a, b) => a.price.compareTo(b.price));
-      case _FlightSort.fastest:
-        list.sort(
-          (a, b) => a.arrivalTime
-              .difference(a.departureTime)
-              .compareTo(b.arrivalTime.difference(b.departureTime)),
-        );
-      case _FlightSort.earliest:
-        list.sort((a, b) => a.departureTime.compareTo(b.departureTime));
-      case _FlightSort.recommended:
-        break;
+  String _formatDate(DateTime date, bool isBn) {
+    if (isBn) {
+      const bnMonths = [
+        '',
+        'জানুয়ারি',
+        'ফেব্রুয়ারি',
+        'মার্চ',
+        'এপ্রিল',
+        'মে',
+        'জুন',
+        'জুলাই',
+        'আগস্ট',
+        'সেপ্টেম্বর',
+        'অক্টোবর',
+        'নভেম্বর',
+        'ডিসেম্বর',
+      ];
+      final day = CurrencyFormatter.toBanglaDigits(date.day.toString());
+      final year = CurrencyFormatter.toBanglaDigits(date.year.toString());
+      return '$day ${bnMonths[date.month]} $year';
     }
-    return list;
+    return DateFormat('d MMM yyyy, EEEE').format(date);
+  }
+
+  void _onBookWhatsApp(BuildContext context, FlightProvider provider, double estimatedOmr, bool isBn) {
+    final fareStr = isBn
+        ? '${CurrencyFormatter.formatOmr(estimatedOmr, banglaDigits: true)} (≈ ${CurrencyFormatter.convertOmrToBdt(estimatedOmr, banglaDigits: true)})'
+        : '${CurrencyFormatter.formatOmr(estimatedOmr)} (≈ ${CurrencyFormatter.convertOmrToBdt(estimatedOmr)})';
+
+    final msg = provider.buildWhatsAppMessage(
+      price: fareStr,
+      isBangla: isBn,
+    );
+    UrlHelper.launchWhatsApp(customMessage: msg);
   }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<FlightProvider>();
-    final flights = _applyFilters(
-      provider.searchResults.isNotEmpty ? provider.searchResults : provider.flights,
-    );
-    final loading = provider.isLoading && provider.flights.isEmpty;
-    final failed = provider.errorMessage != null && provider.flights.isEmpty;
+    final isRound = provider.tripType == FlightSearchTripType.roundTrip;
+    final estimatedOmr = _calculateEstimatedOmr(provider);
+    final isBn = context.isBangla;
+
+    final depDateStr = _formatDate(provider.departureDate, isBn);
+    final retDateStr = provider.returnDate != null ? _formatDate(provider.returnDate!, isBn) : null;
+
+    final tripTypeStr = isRound
+        ? context.pick('Round Trip', 'রাউন্ড ট্রিপ (যাওয়া-আসা)')
+        : context.pick('One Way', 'ওয়ান ওয়ে (একমুখী)');
+
+    final travelersStr = isBn
+        ? '${CurrencyFormatter.toBanglaDigits(provider.passengers.toString())} জন (${CurrencyFormatter.toBanglaDigits(provider.adults.toString())} প্রাপ্তবয়স্ক${provider.children > 0 ? ', ${CurrencyFormatter.toBanglaDigits(provider.children.toString())} শিশু' : ''}${provider.infants > 0 ? ', ${CurrencyFormatter.toBanglaDigits(provider.infants.toString())} নবজাতক' : ''})'
+        : '${provider.passengers} Traveler(s) (${provider.adults} Adult${provider.children > 0 ? ', ${provider.children} Child' : ''}${provider.infants > 0 ? ', ${provider.infants} Infant' : ''})';
+
+    final baggageStr = isBn
+        ? CurrencyFormatter.toBanglaDigits(provider.baggage).replaceAll('KG', 'কেজি').replaceAll('kg', 'কেজি')
+        : provider.baggage;
+
+    final classStr = isBn
+        ? (provider.travelClass.toLowerCase() == 'business' ? 'বিজনেস ক্লাস' : 'ইকোনমি ক্লাস')
+        : '${provider.travelClass} Class';
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           FlightHeader(
-            title: context.tr('flights.results'),
-            subtitle: '${provider.originCode} → ${provider.destCode}',
-            action: _HeaderIcon(
-              icon: PhosphorIconsBold.arrowsClockwise,
-              onTap: provider.fetchFlights,
-            ),
+            title: context.pick('Flight Booking Details', 'ফ্লাইট বুকিং বিবরণ'),
+            subtitle: '${provider.originCity} ➔ ${provider.destCity}',
           ),
           Expanded(
-            child: RefreshIndicator(
-              color: AppColors.primary,
-              onRefresh: provider.fetchFlights,
-              child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.sm),
-                      child: FilterChipRail(
-                        labels: [
-                          for (final k in _filterKeys.values) context.tr(k),
-                        ],
-                        index: _FlightFilter.values.indexOf(_filter),
-                        onChanged: (i) =>
-                            setState(() => _filter = _FlightFilter.values[i]),
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(
-                    child: _countRow(context, loading, flights.length),
-                  ),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.page,
-                      0,
-                      AppSpacing.page,
-                      AppSpacing.xxxl,
-                    ),
-                    sliver: _content(provider, flights, loading, failed),
-                  ),
-                ],
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                AppSpacing.lg,
+                AppSpacing.page,
+                AppSpacing.xxxl,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _countRow(BuildContext context, bool loading, int count) {
-    final word = context.tr(
-      count == 1 ? 'flights.optionsOne' : 'flights.optionsMany',
-    );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        AppSpacing.md,
-        AppSpacing.page,
-        AppSpacing.md,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              loading ? context.tr('flights.searching') : '$count $word',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textSecondary,
-                fontFeatures: AppText.tabular,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Pressable(
-            onTap: _showSortSheet,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-                border: Border.all(color: AppColors.border),
-                boxShadow: AppShadows.soft,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    PhosphorIconsBold.slidersHorizontal,
-                    size: 13,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 6),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 110),
-                    child: Text(
-                      context.tr(_sortKeys[_sort]!),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                      ),
+                  // ── Compact Itinerary Card ──
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: AppShadows.soft,
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSortSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.page,
-              AppSpacing.md,
-              AppSpacing.page,
-              AppSpacing.xl,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(child: SheetHandle()),
-                const SizedBox(height: AppSpacing.lg),
-                Text(
-                  ctx.tr('flights.sortTitle'),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                ..._sortKeys.entries.map((e) {
-                  final selected = _sort == e.key;
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Pressable(
-                      onTap: () {
-                        setState(() => _sort = e.key);
-                        Navigator.pop(ctx);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        decoration: BoxDecoration(
-                          color: selected ? AppColors.primarySubtle : Colors.white,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(
-                            color: selected ? AppColors.primary : AppColors.border,
-                            width: selected ? 1.4 : 1,
-                          ),
-                        ),
-                        child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Route & Trip Badge Row
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
                               child: Text(
-                                ctx.tr(e.value),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight:
-                                      selected ? FontWeight.w800 : FontWeight.w600,
-                                  color: selected
-                                      ? AppColors.primary
-                                      : AppColors.textPrimary,
+                                '${provider.originCity} ➔ ${provider.destCity}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
+                                  letterSpacing: -0.3,
                                 ),
                               ),
                             ),
-                            if (selected)
-                              const Icon(
-                                PhosphorIconsFill.checkCircle,
-                                size: 20,
-                                color: AppColors.primary,
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primarySubtle,
+                                borderRadius: BorderRadius.circular(AppRadius.pill),
                               ),
+                              child: Text(
+                                tripTypeStr,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${provider.originCode} ➔ ${provider.destCode}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.secondary,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1, thickness: 1, color: AppColors.divider),
+                        ),
+
+                        // Key Information Rows
+                        _buildInfoRow(
+                          icon: PhosphorIconsRegular.calendarBlank,
+                          label: context.pick('Departure', 'যাত্রার তারিখ'),
+                          value: depDateStr,
+                        ),
+
+                        if (isRound && retDateStr != null) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            icon: PhosphorIconsRegular.calendarCheck,
+                            label: context.pick('Return', 'ফেরার তারিখ'),
+                            value: retDateStr,
+                          ),
+                        ],
+
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          icon: PhosphorIconsRegular.users,
+                          label: context.pick('Travelers', 'যাত্রী সংখ্যা'),
+                          value: travelersStr,
+                        ),
+
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          icon: PhosphorIconsRegular.suitcaseSimple,
+                          label: context.pick('Baggage', 'লাগেজের ওজন'),
+                          value: baggageStr,
+                        ),
+
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          icon: PhosphorIconsRegular.armchair,
+                          label: context.pick('Cabin Class', 'কেবিন ক্লাস'),
+                          value: classStr,
+                        ),
+
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1, thickness: 1, color: AppColors.divider),
+                        ),
+
+                        // Estimated Fare
+                        Text(
+                          context.pick('ESTIMATED STARTING FARE', 'আনুমানিক সর্বনিম্ন ভাড়া'),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            Text(
+                              CurrencyFormatter.formatOmr(estimatedOmr, banglaDigits: isBn),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            Text(
+                              isBn
+                                  ? '(≈ ${CurrencyFormatter.convertOmrToBdt(estimatedOmr, banglaDigits: true)} থেকে)'
+                                  : '(≈ ${CurrencyFormatter.convertOmrToBdt(estimatedOmr)} est.)',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xl),
+
+                  // ── Direct WhatsApp Action Button ──
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E), // WhatsApp vibrant green
+                      foregroundColor: Colors.white,
+                      elevation: 2,
+                      shadowColor: const Color(0xFF22C55E).withValues(alpha: 0.4),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
                     ),
-                  );
-                }),
-              ],
+                    icon: const Icon(PhosphorIconsFill.whatsappLogo, size: 24),
+                    label: Text(
+                      context.pick('Book via WhatsApp', 'হোয়াটসঅ্যাপে সরাসরি বুকিং করুন'),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    onPressed: () => _onBookWhatsApp(context, provider, estimatedOmr, isBn),
+                  ),
+
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Modify Search Details ──
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    icon: const Icon(PhosphorIconsRegular.pencilSimple, size: 15),
+                    label: Text(
+                      context.pick('Modify Search Details', 'ফ্লাইটের তথ্য পরিবর্তন করুন'),
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 15, color: AppColors.primary),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textSecondary,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _content(
-    FlightProvider provider,
-    List<FlightModel> flights,
-    bool loading,
-    bool failed,
-  ) {
-    if (loading) {
-      return const SliverToBoxAdapter(
-        child: Column(
-          children: [
-            FlightCardSkeleton(),
-            FlightCardSkeleton(),
-            FlightCardSkeleton(),
-          ],
-        ),
-      );
-    }
-
-    if (failed) {
-      return SliverToBoxAdapter(
-        child: ErrorStateView(
-          message: provider.errorMessage!,
-          onRetry: provider.fetchFlights,
-        ),
-      );
-    }
-
-    if (flights.isEmpty) {
-      final isAll = _filter == _FlightFilter.all;
-      return SliverToBoxAdapter(
-        child: EmptyStateView(
-          icon: PhosphorIconsDuotone.airplaneTilt,
-          title: context.tr('flights.noMatch'),
-          message: context.tr(
-            isAll ? 'flights.noMatchAll' : 'flights.noMatchFilter',
-          ),
-          actionText: context.tr(
-            isAll ? 'flights.refreshFares' : 'flights.clearFilter',
-          ),
-          onAction: () {
-            if (isAll) {
-              provider.fetchFlights();
-            } else {
-              setState(() => _filter = _FlightFilter.all);
-            }
-          },
-        ),
-      );
-    }
-
-    return SliverList.builder(
-      itemCount: flights.length,
-      itemBuilder: (context, index) {
-        final flight = flights[index];
-        return FadeSlideIn(
-          key: ValueKey('${flight.id}-$_filter-$_sort'),
-          index: index,
-          child: FlightCard(
-            flight: flight,
-            onBook: () => FlightBookingDialog.show(context, flight),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _HeaderIcon extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _HeaderIcon({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: const BoxDecoration(
-          color: AppColors.divider,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(icon, size: 16, color: AppColors.primary),
-      ),
+      ],
     );
   }
 }

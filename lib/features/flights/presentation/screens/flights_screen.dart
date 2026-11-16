@@ -108,10 +108,6 @@ class _FlightsScreenState extends State<FlightsScreen> {
                   const SizedBox(height: AppSpacing.xl),
                   SectionHeader(
                     title: context.tr('flights.hotDeals'),
-                    subtitle: context.pick(
-                      'Exclusive discounts on airline bookings',
-                      'এয়ারলাইন টিকিটে বিশেষ ছাড় ও অফার',
-                    ),
                     actionText: context.tr('action.viewAll'),
                     onAction: () => _onSearch(provider),
                   ),
